@@ -1,4 +1,4 @@
-# TezosJ-plainjava
+# TezosJ_plainjava
 TezosJ SDK plain Java version
 
 The TezosJ SDK library enables plain Java developers to create applications that communicates with Tezos blockchain.
