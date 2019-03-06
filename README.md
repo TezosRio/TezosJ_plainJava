@@ -1,0 +1,95 @@
+# TezosJ-plainjava
+TezosJ SDK plain Java version
+
+The TezosJ SDK library enables plain Java developers to create applications that communicates with Tezos blockchain.
+
+The library is written in Java and is based on Gradle framework. This repository contains the library source code and a Main class to test some features.
+
+## Requirements
+
+- Java 8
+- Windows / Linux (not tested yet) / Mac (not tested yet)
+- Eclipse or another Java IDE.
+
+## Getting started
+
+- Clone the repository, import into your Java IDE and run the Main class.
+- Or download the JAR (https://github.com/LMilfont/TezosJ-plainjava/blob/master/tezosj-sdk-plain-java-0.9.0.jar) and add to your project's classpath.
+- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/0.9.0/tezosj-sdk-plain-java-0.9.0.jar) and put in your project's classpath.
+- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:0.9.0'  
+
+
+## Usage
+
+	   // Set proxy, if needed.
+	   // Global.proxyHost = "myProxyHost";
+	   // Global.proxyPort = "myProxyPort";
+	   
+	   // Tells system to ignore invalid certificates, if needed.
+	   // Global.ignoreInvalidCertificates = false;
+
+	   // Creates a new wallet with a passphrase.
+	   TezosWallet wallet = new TezosWallet("myPassphrase");
+
+	   // Shows some wallet data output. 
+	   System.out.println(wallet.getMnemonicWords());
+	   System.out.println(wallet.getPublicKeyHash());
+	   System.out.println(wallet.getBalance());  
+
+	   // Imports a previously owned wallet with mnemonic words and passphrase.
+	   // TezosWallet wallet2 = new TezosWallet("word1 word2 ... word15", "myPassphrase");
+
+	   // Shows some wallet data output. 
+	   // System.out.println(wallet2.getMnemonicWords());
+	   // System.out.println(wallet2.getPublicKeyHash());
+	   // System.out.println(wallet2.getBalance());  
+
+	   // Saves the current wallet from memory to file.
+	   wallet.save("c:\\temp\\mySavedWallet.txt");
+
+	   System.out.println("Saved the wallet to disk.");
+
+	   // Creates a new wallet by reading from file.
+	   TezosWallet myLoadedWallet = new TezosWallet(true, "c:\\temp\\mySavedWallet.txt", "myPassphrase");
+
+	   System.out.println("Loaded the wallet from disk:");
+	   
+	   // Shows loaded wallet data. 
+	   System.out.println(myLoadedWallet.getMnemonicWords());
+	   System.out.println(myLoadedWallet.getPublicKeyHash());
+	   System.out.println(myLoadedWallet.getBalance());  
+	   
+	   // Example of Sending funds.
+	   // BigDecimal amount = new BigDecimal("1");
+	   // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, "0", "", "");
+	   // System.out.println(jsonObject.get("result"));
+	   
+
+## Disclaimer
+
+This software is at Beta stage. It is currently experimental and still under development. Many features are not fully tested/implemented yet. This version uses Tezos Betanet (!)
+
+
+## Features
+
+    Create valid Tezos wallet address
+    Get account balance
+    Send funds
+
+The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos's network real operations (create_account, transfer_token, etc.)
+
+## Credits
+
+- TezosJ is based on Stephen Andrews' EZTZ Javascript library https://github.com/stephenandrews/eztz.
+- TezosJ is also based on ConseilJS from Cryptonomic https://github.com/Cryptonomic/ConseilJS
+- TezosJ uses LazySodium https://github.com/terl/lazysodium-java
+- TezosJ uses BitcoinJ Java Library https://github.com/bitcoinj/bitcoinj.
+- Special thanks to Tezzigator (https://twitter.com/@tezzigator) for providing the code for Tezos Key Generation in Java.
+
+## License
+
+The TezosJ SDK library is available under the MIT License. Check out the license file for more information.
+
+## See also
+
+TezosJ SDK for Android.
