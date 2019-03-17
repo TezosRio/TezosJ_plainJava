@@ -267,8 +267,8 @@ public class TezosGateway
     {
         JSONObject result = new JSONObject();
 
-        BigDecimal roundedAmount = amount.setScale(2, BigDecimal.ROUND_HALF_UP);
-        BigDecimal roundedFee = fee.setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal roundedAmount = amount.setScale(5, BigDecimal.ROUND_HALF_UP);
+        BigDecimal roundedFee = fee.setScale(5, BigDecimal.ROUND_HALF_UP);
         JSONArray operations = new JSONArray();
         JSONObject revealOperation = new JSONObject();
         JSONObject transaction = new JSONObject();
@@ -310,7 +310,7 @@ public class TezosGateway
 
         if (storageLimit == null)
         {
-            storageLimit = "0";
+            storageLimit = "300";
         }
         else
         {
@@ -506,12 +506,13 @@ public class TezosGateway
     	// If Manager key is not revealed for account...
     	if(!isManagerKeyRevealedForAccount(blockHead, pkh))
     	{
-    		
+            BigDecimal fee = new BigDecimal("0.001267");
+            BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
     		revealOp.put("kind", "reveal");
     		revealOp.put("source", pkh);
-    		revealOp.put("fee", "0");  
+    		revealOp.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));  
     		revealOp.put("counter", String.valueOf(counter + 1));
-    		revealOp.put("gas_limit", "10000");
+    		revealOp.put("gas_limit", "11000");
     		revealOp.put("storage_limit", "300");
     		revealOp.put("public_key", publicKey);
  
