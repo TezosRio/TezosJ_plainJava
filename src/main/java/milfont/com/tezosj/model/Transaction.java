@@ -1,57 +1,54 @@
 package milfont.com.tezosj.model;
 
-public class Transaction
-{
-    private String timestamp = "";
-    private String from = "";
-    private String to = "";
-    private String amount = "";
+import java.util.Date;
 
-    public Transaction(String timestamp, String from, String to, String amount)
-    {
-        this.timestamp = timestamp;
-        this.from = from;
-        this.to = to;
-        this.amount = amount;
+import org.json.JSONObject;
+
+public class Transaction {
+    private Date _timestamp;
+    private String _from;
+    private String _to;
+    private long _amount;
+    private long _fee;
+
+    public Transaction(Date timestamp, String from, String to, long amount, long fee) {
+        _timestamp = timestamp;
+        _from = from;
+        _to = to;
+        _amount = amount;
+        _fee = fee;
     }
 
-    public String getTimestamp()
-    {
-        return timestamp;
+    /**
+     * Parses a Transaction from a JSON object containing standard Tezos RPC keys.
+     * 
+     * @param json A JSON object containing "timestamp", "source", "destination", "amount", and "fee" keys
+     */
+    public Transaction(JSONObject json) {
+        this(new Date(((Number)json.get("timestamp")).longValue()), (String)json.get("source"), (String)json.get("destination"), ((Number)json.get("amount")).longValue(), ((Number)json.get("fee")).longValue());
     }
 
-    public void setTimestamp(String timestamp)
-    {
-        this.timestamp = timestamp;
+    public Date getTimestamp() {
+        return _timestamp;
     }
 
-    public String getFrom()
-    {
-        return from;
+    public long getEpoch() {
+        return _timestamp.getTime();
     }
 
-    public void setFrom(String from)
-    {
-        this.from = from;
+    public String getFrom() {
+        return _from;
     }
 
-    public String getTo()
-    {
-        return to;
+    public String getTo() {
+        return _to;
     }
 
-    public void setTo(String to)
-    {
-        this.to = to;
+    public long getAmount() {
+        return _amount;
     }
 
-    public String getAmount()
-    {
-        return amount;
-    }
-
-    public void setAmount(String amount)
-    {
-        this.amount = amount;
+    public long getFee() {
+        return _fee;
     }
 }

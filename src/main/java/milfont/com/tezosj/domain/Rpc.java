@@ -6,64 +6,39 @@ import java.math.BigDecimal;
 import milfont.com.tezosj.data.TezosGateway;
 import milfont.com.tezosj.model.EncKeys;
 
-
-public class Rpc
-{
-
+/**
+ * 
+ */
+public class Rpc {
     private TezosGateway tezosGateway = null;
 
-
-    public Rpc()
-    {
+    public Rpc() {
         this.tezosGateway = new TezosGateway();
     }
-
 
     public TezosGateway getTezosGateway() {
 		return tezosGateway;
 	}
 
-
-	public String getHead()
-    {
-        JSONObject result = new JSONObject();
+	public String getHead() {
         String response = "";
 
-        try
-        {
+        try {
             response = (String) tezosGateway.getHead().get("result");
-            result.put("result", response);
-
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
-            try
-            {
-                result.put("result", "An error occured when trying to do getHead operation. See stacktrace for more info.");
-            }
-            catch (Exception f)
-            {
-                f.printStackTrace();
-            }
         }
 
         return response;
     }
 
-    public JSONObject getBalance(String address)
-    {
+    public JSONObject getBalance(String address) {
         JSONObject result = new JSONObject();
-        String response = "";
 
-        try
-        {
-            response = (String) tezosGateway.getBalance(address).get("result");
+        try {
+            String response = (String) tezosGateway.getBalance(address).get("result");
             result.put("result", response);
-
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
             try
             {
@@ -76,7 +51,6 @@ public class Rpc
         }
 
         return result;
-
     }
 
     public JSONObject transfer(String from, String to, BigDecimal amount, BigDecimal fee, String gasLimit, String storageLimit, EncKeys encKeys)
@@ -96,5 +70,4 @@ public class Rpc
         return result;
 
     }
-
 }

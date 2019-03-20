@@ -1,2 +1,6 @@
-/.gradle/
-/build/
+.gradle/
+.vscode/
+bin/
+build/
+
+.DS_Store 
