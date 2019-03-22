@@ -76,8 +76,11 @@ This software is at Beta stage. It is currently experimental and still under dev
 ## Features
 
     Create valid Tezos wallet address
+    Import Tezos wallet
+    Check if an address is valid
     Get account balance
     Send funds
+    Get list of address transactions through Conseil
 
 The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos's network real operations (create_account, transfer_token, etc.)
 
