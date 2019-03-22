@@ -8,7 +8,7 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Requirements
 
 - Java 8
-- Windows / Linux (not tested yet) / Mac (not tested yet)
+- Windows / Linux (not tested yet) / Mac
 - Eclipse or another Java IDE.
 
 ## Getting started
