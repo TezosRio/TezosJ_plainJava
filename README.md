@@ -61,9 +61,12 @@ The library is written in Java and is based on Gradle framework. This repository
 	   
 	   // Example of Sending funds.
 	   // BigDecimal amount = new BigDecimal("1");
-	   // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, "0", "", "");
+	   // BigDecimal fee = new BigDecimal("0.00142");
+	   // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
 	   // System.out.println(jsonObject.get("result"));
-	   
+       
+	   // Using Conseil Gateway, from Cryptonomic.
+	   // ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");	   
 
 ## Disclaimer
 
