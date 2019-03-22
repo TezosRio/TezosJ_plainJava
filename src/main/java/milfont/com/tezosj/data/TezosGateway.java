@@ -41,13 +41,15 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-public class TezosGateway {
+public class TezosGateway
+{
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType textPlainMT = MediaType.parse("text/plain; charset=utf-8");
     private static final Integer HTTP_TIMEOUT = 20;
     private static MySodium sodium = null;
 
-    public TezosGateway() {
+    public TezosGateway()
+    {
         Random rand = new Random();
         int n = rand.nextInt(1000000) + 1;
         TezosGateway.sodium = new MySodium(String.valueOf(n));
@@ -59,7 +61,8 @@ public class TezosGateway {
     }
 
     // Sends request for Tezos node.
-    private Object query(String endpoint, String data) throws Exception {
+    private Object query(String endpoint, String data) throws Exception
+    {
         JSONObject result = null;
         Boolean methodPost = false;
         Request request = null;
@@ -72,12 +75,14 @@ public class TezosGateway {
         String DEFAULT_PROVIDER = Global.defaultProvider;
         RequestBody body = RequestBody.create(textPlainMT, DEFAULT_PROVIDER + endpoint);
 
-        if (data != null) {
+        if (data != null)
+        {
             methodPost = true;
             body = RequestBody.create(MEDIA_PLAIN_TEXT_JSON, data.getBytes());
         }
 
-        if (methodPost == false) {
+        if (methodPost == false)
+        {
             request = new Request.Builder()
                     .url(DEFAULT_PROVIDER + endpoint)
                     .build();
@@ -307,7 +312,8 @@ public class TezosGateway {
         // Append Reveal Operation if needed.
         revealOperation = appendRevealOperation(head, encKeys, from, (counter));
 
-        if (revealOperation != null) {
+        if (revealOperation != null)
+        {
             operations.put(revealOperation);
             counter = counter + 1;
         }
@@ -376,11 +382,13 @@ public class TezosGateway {
         return Base58Check.encode(hash);
     }
 
-    private JSONObject nodeApplyOperation(JSONArray payload) throws Exception {
+    private JSONObject nodeApplyOperation(JSONArray payload) throws Exception
+    {
         return (JSONObject) query("/chains/main/blocks/head/helpers/preapply/operations", payload.toString());
     }
 
-    private JSONObject applyOperation(JSONObject head, JSONArray operations, String operationGroupHash, String forgedOperationGroup, SignedOperationGroup signedOpGroup) throws Exception {
+    private JSONObject applyOperation(JSONObject head, JSONArray operations, String operationGroupHash, String forgedOperationGroup, SignedOperationGroup signedOpGroup) throws Exception
+    {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("protocol", head.get("protocol"));
         jsonObject.put("branch", head.get("hash"));
@@ -393,7 +401,8 @@ public class TezosGateway {
         return nodeApplyOperation(payload);
     }
 
-    private JSONObject checkAppliedOperationResults(JSONObject appliedOp) throws Exception {
+    private JSONObject checkAppliedOperationResults(JSONObject appliedOp) throws Exception
+    {
         JSONObject returned = new JSONObject();
         Boolean errors = false;
         String reason = "";
@@ -446,7 +455,8 @@ public class TezosGateway {
         return returned;
     }
  
-    private JSONObject appendRevealOperation (JSONObject blockHead, EncKeys encKeys, String pkh, Integer counter) throws Exception {
+    private JSONObject appendRevealOperation (JSONObject blockHead, EncKeys encKeys, String pkh, Integer counter) throws Exception
+    {
         // Create new JSON object for the reveal operation.
         JSONObject revealOp = new JSONObject();
         
@@ -460,7 +470,8 @@ public class TezosGateway {
         }
 		String publicKey = builder2.toString();
         // If Manager key is not revealed for account...
-        if(!isManagerKeyRevealedForAccount(blockHead, pkh)) {
+        if(!isManagerKeyRevealedForAccount(blockHead, pkh))
+        {
             BigDecimal fee = new BigDecimal("0.001267");
             BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
     		revealOp.put("kind", "reveal");
@@ -477,7 +488,8 @@ public class TezosGateway {
         return revealOp;
     }
     
-    private boolean isManagerKeyRevealedForAccount(JSONObject blockHead, String pkh) throws Exception {
+    private boolean isManagerKeyRevealedForAccount(JSONObject blockHead, String pkh) throws Exception
+    {
        String blockHeadHash = blockHead.getString("hash");
        
        return getAccountManagerForBlock(blockHeadHash, pkh).has("key");
@@ -496,7 +508,8 @@ public class TezosGateway {
         return result;
     }
 
-    public JSONObject sign(byte[] bytes, EncKeys keys, String watermark) throws Exception {
+    public JSONObject sign(byte[] bytes, EncKeys keys, String watermark) throws Exception
+    {
         // Access wallet keys to have authorization to perform the operation.
         byte[] byteSk = keys.getEncPrivateKey();
         byte[] decSkBytes = decryptBytes(byteSk, TezosWallet.getEncryptionKey(keys));
@@ -546,7 +559,8 @@ public class TezosGateway {
     }
 
     // Tests if a string is a valid JSON.
-    private Boolean isJSONObject(String myStr) {
+    private Boolean isJSONObject(String myStr)
+    {
         try {
             JSONObject testJSON = new JSONObject(myStr);
             return testJSON != null;
@@ -556,24 +570,32 @@ public class TezosGateway {
     }
 
     // Tests if s string is a valid JSON Array.
-    private Boolean isJSONArray(String myStr) {
-        try {
+    private Boolean isJSONArray(String myStr)
+    {
+        try
+        {
             JSONArray testJSONArray = new JSONArray(myStr);
             return testJSONArray != null;
-        } catch (JSONException e) {
+        }
+        catch (JSONException e)
+        {
             return false;
         }
     }
 
     // Decryption routine.
-    private static byte[] decryptBytes(byte[] encrypted, byte[] key) {
-        try {
+    private static byte[] decryptBytes(byte[] encrypted, byte[] key)
+    {
+        try
+        {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
 
             return cipher.doFinal(encrypted);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
         }
         return null;
