@@ -7,8 +7,10 @@ import milfont.com.tezosj.data.ConseilGateway;
 import milfont.com.tezosj.helper.Global;
 import milfont.com.tezosj.model.TezosWallet;
 
-public class Main {
-   public static void main(String[] args) throws Exception {
+public class Main
+{
+   public static void main(String[] args) throws Exception
+   {
        // Creates a new wallet with a passphrase.
        TezosWallet wallet = new TezosWallet("myPassphrase");
 
@@ -49,6 +51,6 @@ public class Main {
        // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
        // System.out.println(jsonObject.get("result"));
        
-	   ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");
+       ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");
    }
 }
