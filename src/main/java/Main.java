@@ -51,6 +51,7 @@ public class Main
        // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
        // System.out.println(jsonObject.get("result"));
        
-       ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");
+       // Using Conseil Gateway, from Cryptonomic.
+       // ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");
    }
 }
