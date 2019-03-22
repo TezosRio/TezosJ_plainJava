@@ -14,8 +14,8 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-0.9.6.jar) and add to your project's classpath.
-- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/0.9.6/tezosj-sdk-plain-java-0.9.6.jar) and put in your project's classpath.
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-0.9.7.jar) and add to your project's classpath.
+- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/0.9.7/tezosj-sdk-plain-java-0.9.6.jar) and put in your project's classpath.
 - Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:0.9.6'  
 
 
