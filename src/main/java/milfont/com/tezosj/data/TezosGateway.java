@@ -45,7 +45,7 @@ public class TezosGateway
 {
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType textPlainMT = MediaType.parse("text/plain; charset=utf-8");
-    private static final Integer HTTP_TIMEOUT = 20;
+    private static final int HTTP_TIMEOUT = 20;
     private static MySodium sodium = null;
 
     public TezosGateway()
@@ -61,10 +61,10 @@ public class TezosGateway
     }
 
     // Sends request for Tezos node.
-    private Object query(String endpoint, String data) throws Exception
+    private JSONObject query(String endpoint, String data) throws Exception
     {
         JSONObject result = null;
-        Boolean methodPost = false;
+        //Boolean methodPost = false;
         Request request = null;
         Proxy proxy=null;
         SSLContext sslcontext = null;
@@ -73,25 +73,19 @@ public class TezosGateway
         
         final MediaType MEDIA_PLAIN_TEXT_JSON = MediaType.parse("application/json");
         String DEFAULT_PROVIDER = Global.defaultProvider;
-        RequestBody body = RequestBody.create(textPlainMT, DEFAULT_PROVIDER + endpoint);
+        //RequestBody body = RequestBody.create(textPlainMT, DEFAULT_PROVIDER + endpoint);
 
         if (data != null)
         {
-            methodPost = true;
-            body = RequestBody.create(MEDIA_PLAIN_TEXT_JSON, data.getBytes());
-        }
-
-        if (methodPost == false)
-        {
             request = new Request.Builder()
-                    .url(DEFAULT_PROVIDER + endpoint)
-                    .build();
+                        .url(DEFAULT_PROVIDER + endpoint)
+                        .addHeader("Content-Type", "text/plain")
+                        .post(RequestBody.create(MEDIA_PLAIN_TEXT_JSON, data.getBytes()))
+                        .build();
         } else {
             request = new Request.Builder()
-                    .url(DEFAULT_PROVIDER + endpoint)
-                    .addHeader("Content-Type", "text/plain")
-                    .post(body)
-                    .build();
+                        .url(DEFAULT_PROVIDER + endpoint)
+                        .build();
         }
 
         // If user specified to ignore invalid certificates.
@@ -99,9 +93,9 @@ public class TezosGateway
         {
            sslcontext = SSLContext.getInstance("TLS");
            sslcontext.init(null, new TrustManager[]{new X509TrustManager() {
-           public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-           public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-           public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+            public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+            public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+            public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
            }}, new java.security.SecureRandom());
         
            myBuilder.sslSocketFactory(sslcontext.getSocketFactory());  // To ignore an invalid certificate.
@@ -129,22 +123,19 @@ public class TezosGateway
             {
                 result = new JSONObject(strResponse);
             }
+            else if (isJSONArray(strResponse))
+            {
+                result = new JSONObject();
+                result.put("result", new JSONArray(strResponse));
+            }
             else
             {
-                if (isJSONArray(strResponse))
-                {
-                    JSONArray myJSONArray = new JSONArray(strResponse);
-                    result = new JSONObject();
-                    result.put("result", myJSONArray);
-                }
-                else
-                {
-                    // If response is not a JSONObject nor JSONArray...
-                    // (can be a primitive).
-                    result = new JSONObject();
-                    result.put("result", strResponse);
-                }
+                // If response is not a JSONObject nor JSONArray...
+                // (can be a primitive).
+                result = new JSONObject();
+                result.put("result", strResponse);
             }
+
         }
         catch (Exception e)
         {
@@ -161,12 +152,12 @@ public class TezosGateway
 
     public JSONObject getHead() throws Exception
     {
-        return (JSONObject) query("/chains/main/blocks/head", null);
+        return query("/chains/main/blocks/head", null);
     }
 
     public JSONObject getAccountManagerForBlock(String blockHash, String accountID) throws Exception
     {
-       JSONObject result = (JSONObject) query("/chains/main/blocks/" + blockHash + "/context/contracts/" + accountID + "/manager_key", null);
+       JSONObject result = query("/chains/main/blocks/" + blockHash + "/context/contracts/" + accountID + "/manager_key", null);
     
        return result;
     }
@@ -174,7 +165,7 @@ public class TezosGateway
     // Gets the balance for a given address.
     public JSONObject getBalance(String address) throws Exception
     {
-        return (JSONObject) query("/chains/main/blocks/head/context/contracts/" + address + "/balance", null);
+        return query("/chains/main/blocks/head/context/contracts/" + address + "/balance", null);
     }
 
     // Prepares and sends an operation to the Tezos node.
@@ -238,7 +229,6 @@ public class TezosGateway
                     result.put("result", "There were errors.");
                 }
             }
-            
         }
         else
         {
@@ -262,7 +252,7 @@ public class TezosGateway
         JSONObject account = new JSONObject();
         JSONObject parameters = new JSONObject();
         JSONArray argsArray = new JSONArray();
-        Integer counter = 0;
+        int counter = 0;
 
         // Check if address has enough funds to do the transfer operation.
         JSONObject balance = getBalance(from);
@@ -271,7 +261,7 @@ public class TezosGateway
             BigDecimal bdAmount = amount.multiply(BigDecimal.valueOf(UTEZ));
             BigDecimal total = new BigDecimal(((balance.getString("result").replaceAll("\\n", "")).replaceAll("\"", "").replaceAll("'", "")));
             
-            if (total.compareTo(bdAmount) < 0) // Returns -1 if value iss less than amount.
+            if (total.compareTo(bdAmount) < 0) // Returns -1 if value is less than amount.
             {
                // Not enough funds to do the transfer.
                 JSONObject returned = new JSONObject();
@@ -281,28 +271,14 @@ public class TezosGateway
             }
         }
         
-        if (gasLimit == null)
+        if (gasLimit == null || gasLimit.length() == 0 || gasLimit.equals("0"))
         {
             gasLimit = "11000";
         }
-        else
-        {
-            if ((gasLimit.length() == 0) || (gasLimit.equals("0")))
-            {
-                gasLimit = "11000";
-            }
-        }
 
-        if (storageLimit == null)
+        if (storageLimit == null || storageLimit.length() == 0)
         {
             storageLimit = "300";
-        }
-        else
-        {
-            if (storageLimit.length() == 0)
-            {
-                storageLimit = "300";
-            }
         }
 
         head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
@@ -332,7 +308,7 @@ public class TezosGateway
 
         operations.put(transaction);
                
-        result = (JSONObject) sendOperation(operations, encKeys);
+        result = sendOperation(operations, encKeys);
 
         return result;
     }
@@ -355,21 +331,19 @@ public class TezosGateway
         return nodeForgeOperations(result.toString());
     }
 
-
     private String nodeForgeOperations(String opGroup) throws Exception
     {
         JSONObject response = (JSONObject) query("/chains/main/blocks/head/helpers/forge/operations", opGroup);
         String forgedOperation = (String) response.get("result");
 
         return ((forgedOperation.replaceAll("\\n", "")).replaceAll("\"", "").replaceAll("'", ""));
-
     }
 
     private JSONObject getAccountForBlock(String blockHash, String accountID) throws Exception
     {
         JSONObject result = new JSONObject();
 
-        result = (JSONObject) query("/chains/main/blocks/" + blockHash + "/context/contracts/" + accountID, null);
+        result = query("/chains/main/blocks/" + blockHash + "/context/contracts/" + accountID, null);
 
         return result;
     }
@@ -384,7 +358,7 @@ public class TezosGateway
 
     private JSONObject nodeApplyOperation(JSONArray payload) throws Exception
     {
-        return (JSONObject) query("/chains/main/blocks/head/helpers/preapply/operations", payload.toString());
+        return query("/chains/main/blocks/head/helpers/preapply/operations", payload.toString());
     }
 
     private JSONObject applyOperation(JSONObject head, JSONArray operations, String operationGroupHash, String forgedOperationGroup, SignedOperationGroup signedOpGroup) throws Exception
@@ -404,7 +378,7 @@ public class TezosGateway
     private JSONObject checkAppliedOperationResults(JSONObject appliedOp) throws Exception
     {
         JSONObject returned = new JSONObject();
-        Boolean errors = false;
+        boolean errors = false;
         String reason = "";
 
         String[] validAppliedKinds = new String[]{"activate_account", "reveal", "transaction", "origination", "delegation"};
@@ -425,9 +399,9 @@ public class TezosGateway
         else if (isJSONArray(first.toString()))
         {
             // Loop through contents and check for errors.
-            Integer elements = ((JSONArray)first.get("contents")).length();
+            int elements = ((JSONArray)first.get("contents")).length();
             String element = "";
-            for(Integer i=0;i<elements;i++)
+            for(int i = 0;i < elements; i++)
             {
                 JSONObject operation_result = ( (JSONObject) ((JSONObject) (((JSONObject) (((JSONArray) first.get("contents")).get(i))).get("metadata"))).get("operation_result"));
                 element = ((JSONObject)operation_result).getString("status");
@@ -455,7 +429,7 @@ public class TezosGateway
         return returned;
     }
  
-    private JSONObject appendRevealOperation (JSONObject blockHead, EncKeys encKeys, String pkh, Integer counter) throws Exception
+    private JSONObject appendRevealOperation(JSONObject blockHead, EncKeys encKeys, String pkh, int counter) throws Exception
     {
         // Create new JSON object for the reveal operation.
         JSONObject revealOp = new JSONObject();
@@ -463,12 +437,7 @@ public class TezosGateway
         // Get public key from encKeys.
         byte[] bytePk = encKeys.getEncPublicKey();
         byte[] decPkBytes = decryptBytes(bytePk, TezosWallet.getEncryptionKey(encKeys));
-
-        StringBuilder builder2 = new StringBuilder();
-        for (byte decPkByte : decPkBytes) {
-            builder2.append((char) (decPkByte));
-        }
-		String publicKey = builder2.toString();
+		String publicKey = new String(decPkBytes);
         // If Manager key is not revealed for account...
         if(!isManagerKeyRevealedForAccount(blockHead, pkh))
         {
@@ -503,7 +472,7 @@ public class TezosGateway
 
     private JSONObject nodeInjectOperation(String payload) throws Exception
     {
-        JSONObject result = (JSONObject) query("/injection/operation?chain=main", payload);
+        JSONObject result = query("/injection/operation?chain=main", payload);
 
         return result;
     }
@@ -513,11 +482,6 @@ public class TezosGateway
         // Access wallet keys to have authorization to perform the operation.
         byte[] byteSk = keys.getEncPrivateKey();
         byte[] decSkBytes = decryptBytes(byteSk, TezosWallet.getEncryptionKey(keys));
-
-        StringBuilder builder = new StringBuilder();
-        for (byte decSkByte : decSkBytes) {
-            builder.append((char) (decSkByte));
-        }
 
         // First, we remove the edsk prefix from the decoded private key bytes.
         byte[] edskPrefix = {(byte) 43, (byte) 246, (byte) 78, (byte) 7};
@@ -559,7 +523,7 @@ public class TezosGateway
     }
 
     // Tests if a string is a valid JSON.
-    private Boolean isJSONObject(String myStr)
+    private boolean isJSONObject(String myStr)
     {
         try {
             JSONObject testJSON = new JSONObject(myStr);
@@ -570,7 +534,7 @@ public class TezosGateway
     }
 
     // Tests if s string is a valid JSON Array.
-    private Boolean isJSONArray(String myStr)
+    private boolean isJSONArray(String myStr)
     {
         try
         {
