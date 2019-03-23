@@ -64,7 +64,6 @@ public class TezosGateway
     private JSONObject query(String endpoint, String data) throws Exception
     {
         JSONObject result = null;
-        //Boolean methodPost = false;
         Request request = null;
         Proxy proxy=null;
         SSLContext sslcontext = null;
@@ -73,7 +72,6 @@ public class TezosGateway
         
         final MediaType MEDIA_PLAIN_TEXT_JSON = MediaType.parse("application/json");
         String DEFAULT_PROVIDER = Global.defaultProvider;
-        //RequestBody body = RequestBody.create(textPlainMT, DEFAULT_PROVIDER + endpoint);
 
         if (data != null)
         {
@@ -401,7 +399,7 @@ public class TezosGateway
             // Loop through contents and check for errors.
             int elements = ((JSONArray)first.get("contents")).length();
             String element = "";
-            for(int i = 0;i < elements; i++)
+            for(int i = 0; i < elements; i++)
             {
                 JSONObject operation_result = ( (JSONObject) ((JSONObject) (((JSONObject) (((JSONArray) first.get("contents")).get(i))).get("metadata"))).get("operation_result"));
                 element = ((JSONObject)operation_result).getString("status");

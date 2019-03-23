@@ -66,12 +66,12 @@ public class TezosWallet
             if (passPhrase.length() > 0)
             {
 
-            	// Creates a unique copy and initializes libsodium native library.
-            	Random rand = new Random();
-            	int  n = rand.nextInt(1000000) + 1;
-            	this.myRandomID = n;
-            	this.sodium = new MySodium(String.valueOf(n));
-            	
+                // Creates a unique copy and initializes libsodium native library.
+                Random rand = new Random();
+                int  n = rand.nextInt(1000000) + 1;
+                this.myRandomID = n;
+                this.sodium = new MySodium(String.valueOf(n));
+                
                 // Converts passPhrase String to a byte array, respecting char values.
                 byte[] c = new byte[passPhrase.length()];
                 for (int i = 0; i < passPhrase.length(); i++)
@@ -111,13 +111,13 @@ public class TezosWallet
                     if (passPhrase.length() > 0)
                     {
 
-                    	// Creates a unique copy and initializes libsodium native library.
-                    	Random rand = new Random();
-                    	int  n = rand.nextInt(1000000) + 1;
-                    	this.myRandomID = n;
-                    	this.sodium = new MySodium(String.valueOf(n));
+                        // Creates a unique copy and initializes libsodium native library.
+                        Random rand = new Random();
+                        int  n = rand.nextInt(1000000) + 1;
+                        this.myRandomID = n;
+                        this.sodium = new MySodium(String.valueOf(n));
                         
-                    	// Converts passPhrase String to a byte array, respecting char values.
+                        // Converts passPhrase String to a byte array, respecting char values.
                         byte[] c = new byte[passPhrase.length()];
                         for (int i = 0; i < passPhrase.length(); i++)
                         {
@@ -172,11 +172,11 @@ public class TezosWallet
     // This will load an existing wallet from media.
     public TezosWallet(Boolean loadFromFile, String pathToFile, String p)
     {
-		// Creates a unique copy and initializes libsodium native library.
-		Random rand = new Random();
-		int n = rand.nextInt(1000000) + 1;
-		this.myRandomID = n;
-		this.sodium = new MySodium(String.valueOf(n));
+        // Creates a unique copy and initializes libsodium native library.
+        Random rand = new Random();
+        int n = rand.nextInt(1000000) + 1;
+        this.myRandomID = n;
+        this.sodium = new MySodium(String.valueOf(n));
 
         load(pathToFile, p);
     }
@@ -408,15 +408,15 @@ public class TezosWallet
                     {
                         if (amount.compareTo(BigDecimal.ZERO) > 0)
                         {
-                        	if (fee.compareTo(BigDecimal.ZERO) > 0)
-                        	{
+                            if (fee.compareTo(BigDecimal.ZERO) > 0)
+                            {
                                // Prepare keys
                                EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
                                encKeys.setEncIv(this.encIv);
                                encKeys.setEncP(this.encPass);
 
                                result = rpc.transfer(from, to, amount, fee, gasLimit, storageLimit, encKeys);
-                        	}
+                            }
                             else
                             {
                                 throw new java.lang.RuntimeException("Fee must be greater than zero.");
@@ -465,7 +465,6 @@ public class TezosWallet
             }
             strHash = strHash.substring(0, 16); // 16 bytes needed.
             pString = strHash;
-           
 
             SecretKey secretKey = createKey();
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -496,12 +495,10 @@ public class TezosWallet
 
     private SecretKey createKey()
     {
-
         try
         {
-        	
-        	KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-        	keyGenerator.init(128);       	
+            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(128);           
 
             return keyGenerator.generateKey();
 
@@ -510,9 +507,7 @@ public class TezosWallet
         {
             throw new RuntimeException("Failed to create a symetric key", e);
         }
-
     }
-
 
     private byte[] getEncryptionKey()
     {
@@ -529,17 +524,12 @@ public class TezosWallet
             
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, entry.getSecretKey(), new IvParameterSpec(encryptionIv));
-            byte[] passwordBytes = cipher.doFinal(encryptionPassword);
-            String password = new String(passwordBytes, "UTF-8");
-
-            return passwordBytes;
-
+            return cipher.doFinal(encryptionPassword);
         }
         catch (Exception e)
         {
             return null;
         }
-
     }
 
     public static byte[] getEncryptionKey(EncKeys keys)
@@ -557,174 +547,145 @@ public class TezosWallet
             
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, entry.getSecretKey(), new IvParameterSpec(encryptionIv));
-            byte[] passwordBytes = cipher.doFinal(encryptionPassword);
-            String password = new String(passwordBytes, "UTF-8");
-
-            return passwordBytes;
-
+            return cipher.doFinal(encryptionPassword);
         }
         catch (Exception e)
         {
             return null;
         }
-
     }
 
     public void save(String pathToFile)
     {
-
-    	if (pathToFile.isEmpty() == false)
-    	{
-	    	// Persists the wallet to media from memory.
-	    	FileOutputStream fop = null;
-			File file;
-	
-			try
-			{
-			   file = new File(pathToFile);
-			   fop = new FileOutputStream(file);
-	
-				// Checks if file exists, then creates it.
-				if (!file.exists())
-				{
-					file.createNewFile();
-				}
-	
-				// Creates a text version of the wallet.
-	            String myWalletData = Base64.getEncoder().encodeToString(this.alias.getBytes()) + ";" +
-	                    Base64.getEncoder().encodeToString(this.publicKey) + ";" +
-	                    Base64.getEncoder().encodeToString(this.publicKeyHash) + ";" +
-	                    Base64.getEncoder().encodeToString(this.privateKey) + ";" +
-	                    Base64.getEncoder().encodeToString(this.balance.getBytes()) + ";" +
-	                    Base64.getEncoder().encodeToString(this.mnemonicWords) + ";";
-	
-				byte[] contentInBytes = myWalletData.getBytes();
-	
-				fop.write(contentInBytes);
-				fop.flush();
-				fop.close();
-				
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-				throw new java.lang.RuntimeException("Error when trying to save the wallet to media.");
-			}
-			finally
-			{
-			   try
-			   {
-			      if (fop != null)
-			      {
-				     fop.close();
-				  }
-				}
-			   catch (IOException e)
-			   {
-					e.printStackTrace();
-				   throw new java.lang.RuntimeException("Error when trying to save the wallet to media.");
-			   }
-			}
-    	}
-		else
-		{
-			throw new java.lang.RuntimeException("A filename and path are required to save the wallet.");
-		}
-	}
-
-            
+        if (pathToFile.isEmpty() == false)
+        {
+            // Persists the wallet to media from memory.
+            FileOutputStream fop = null;
+            File file;
+    
+            try
+            {
+               file = new File(pathToFile);
+               fop = new FileOutputStream(file);
+    
+                // Checks if file exists, then creates it.
+                if (!file.exists())
+                {
+                    file.createNewFile();
+                }
+    
+                // Creates a text version of the wallet.
+                String myWalletData = Base64.getEncoder().encodeToString(this.alias.getBytes()) + ";" +
+                        Base64.getEncoder().encodeToString(this.publicKey) + ";" +
+                        Base64.getEncoder().encodeToString(this.publicKeyHash) + ";" +
+                        Base64.getEncoder().encodeToString(this.privateKey) + ";" +
+                        Base64.getEncoder().encodeToString(this.balance.getBytes()) + ";" +
+                        Base64.getEncoder().encodeToString(this.mnemonicWords) + ";";
+    
+                byte[] contentInBytes = myWalletData.getBytes();
+    
+                fop.write(contentInBytes);
+                fop.flush();
+                fop.close();
+                
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+                throw new java.lang.RuntimeException("Error when trying to save the wallet to media.");
+            }
+            finally
+            {
+               try
+               {
+                  if (fop != null)
+                  {
+                     fop.close();
+                  }
+                }
+               catch (IOException e)
+               {
+                    e.printStackTrace();
+                   throw new java.lang.RuntimeException("Error when trying to save the wallet to media.");
+               }
+            }
+        }
+        else
+        {
+            throw new java.lang.RuntimeException("A filename and path are required to save the wallet.");
+        }
+    }
 
     public void load(String pathToFile, String p)
     {
         // Loads a wallet from media to memory.
-    	
-    	if (pathToFile.isEmpty() == false)
-    	{
-	    	File file = new File(pathToFile);
-			FileInputStream fis = null;
-	        String myWalletString = "";
-	
-			try
-			{
-				fis = new FileInputStream(file);
-	
-				int content;
-				while ((content = fis.read()) != -1)
-				{
-					myWalletString = myWalletString + (char) content;
-				}
-				
-				if (myWalletString.length() > 0)
-		        {
-		            resetWallet();
-		
-		            String[] fields = myWalletString.split("\\;", -1);
-		            this.alias = new String(Base64.getDecoder().decode(fields[0]), "UTF-8");
-		            this.publicKey = Base64.getDecoder().decode(fields[1]);
-		            this.publicKeyHash = Base64.getDecoder().decode(fields[2]);
-		            this.privateKey = Base64.getDecoder().decode(fields[3]);
-		            this.balance = new String(Base64.getDecoder().decode(fields[4]), "UTF-8");
-		            this.mnemonicWords = Base64.getDecoder().decode(fields[5]);
-		
-		            // Converts passPhrase String to a byte array, respecting char values.
-		            byte[] c = new byte[p.length()];
-		            for (int i = 0; i < p.length(); i++)
-		            {
-		                c[i] = (byte) p.charAt(i);
-		            }
-		
-		            initStore(c);
-		            initDomainClasses();
-		         }
-				
-	
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-	            throw new java.lang.RuntimeException("Error when trying to load wallet from media.");
-			}
-			finally
-			{
-				try
-				{
-					if (fis != null)
-					{
-						fis.close();
-					}
-				 }
-				catch (IOException ex)
-				{
-					ex.printStackTrace();
-		            throw new java.lang.RuntimeException("Error when trying to load wallet from media.");
-				}
-			}
-    	}
-		else
-		{
-			throw new java.lang.RuntimeException("A filename and path are required to load a wallet.");				
-		}
-    }    	
-
-    private String buildStringFromByte(byte[] input)
-    {
-        StringBuilder builder = new StringBuilder();
-        for (byte anInput : input)
+        
+        if (pathToFile.isEmpty() == false)
         {
-            builder.append((char) (anInput));
+            File file = new File(pathToFile);
+            FileInputStream fis = null;
+            String myWalletString = "";
+    
+            try
+            {
+                fis = new FileInputStream(file);
+    
+                int content;
+                while ((content = fis.read()) != -1)
+                {
+                    myWalletString = myWalletString + (char) content;
+                }
+                
+                if (myWalletString.length() > 0)
+                {
+                    resetWallet();
+        
+                    String[] fields = myWalletString.split("\\;", -1);
+                    this.alias = new String(Base64.getDecoder().decode(fields[0]), "UTF-8");
+                    this.publicKey = Base64.getDecoder().decode(fields[1]);
+                    this.publicKeyHash = Base64.getDecoder().decode(fields[2]);
+                    this.privateKey = Base64.getDecoder().decode(fields[3]);
+                    this.balance = new String(Base64.getDecoder().decode(fields[4]), "UTF-8");
+                    this.mnemonicWords = Base64.getDecoder().decode(fields[5]);
+        
+                    // Converts passPhrase String to a byte array, respecting char values.
+                    byte[] c = new byte[p.length()];
+                    for (int i = 0; i < p.length(); i++)
+                    {
+                        c[i] = (byte) p.charAt(i);
+                    }
+        
+                    initStore(c);
+                    initDomainClasses();
+                 }
+                
+    
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+                throw new java.lang.RuntimeException("Error when trying to load wallet from media.");
+            }
+            finally
+            {
+                try
+                {
+                    if (fis != null)
+                    {
+                        fis.close();
+                    }
+                 }
+                catch (IOException ex)
+                {
+                    ex.printStackTrace();
+                    throw new java.lang.RuntimeException("Error when trying to load wallet from media.");
+                }
+            }
         }
-        return builder.toString();
-    }
-
-    private byte[] buildByteFromString(String input)
-    {
-        byte[] d = new byte[input.length()];
-        for (int i = 0; i < input.length(); i++)
+        else
         {
-            d[i] = (byte) input.charAt(i);
+            throw new java.lang.RuntimeException("A filename and path are required to load a wallet.");                
         }
-
-        return d;
     }
 
     // Removes the wallet data from memory.
@@ -742,15 +703,12 @@ public class TezosWallet
     }
 
     // Checks if a give phrase is the correct wallet passphrase.
-    public Boolean checkPhrase(String phrase)
+    public boolean checkPhrase(String phrase)
     {
-        Boolean result;
-       
         try
         {
-            MnemonicCode mc = new MnemonicCode();
             List<String> items = Arrays.asList((this.getMnemonicWords()).split(" "));
-            byte[] src_seed = mc.toSeed(items, phrase);
+            byte[] src_seed = MnemonicCode.toSeed(items, phrase);
             byte[] seed = Arrays.copyOfRange(src_seed, 0, 32);
 
             byte[] sodiumPrivateKey = zeros(32 * 2);
@@ -772,29 +730,14 @@ public class TezosWallet
 
             String publicKey = Base58.encode(prefixedPubKeyWithChecksum);
 
-            // Converts this.publicKey into String.
-            StringBuilder builder = new StringBuilder();
             byte[] input = decryptBytes(this.publicKey, getEncryptionKey());
-            for (byte anInput : input)
-            {
-                builder.append((char) (anInput));
-            }
 
-            if (publicKey.equals(builder.toString()))
-            {
-                result = true;
-            }
-            else
-            {
-                result = false;
-            }
+            return publicKey.equals(new String(input));
         }
         catch (Exception e)
         {
-            result = false;
+            return false;
         }
-
-        return result;
     }
 
     public static byte[] zeros(int n)
@@ -804,20 +747,17 @@ public class TezosWallet
     
     public void setProxy(String proxyHost, String proxyPort)
     {
-    	Global.proxyHost = proxyHost; 
-    	Global.proxyPort = proxyPort;
+        Global.proxyHost = proxyHost; 
+        Global.proxyPort = proxyPort;
     }
     
     public void setIgnoreInvalidCertificates(Boolean ignore)
     {
-    	Global.ignoreInvalidCertificates = ignore;
+        Global.ignoreInvalidCertificates = ignore;
     }
 
     public void setProvider(String provider)
     {
-    	Global.defaultProvider = provider;
+        Global.defaultProvider = provider;
     }
-
-    
 }
-
