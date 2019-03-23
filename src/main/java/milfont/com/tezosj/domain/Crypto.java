@@ -7,7 +7,7 @@ public class Crypto
     /**
      * Validates base58-check address.
      */
-    public static boolean checkAddress(String address) throws Exception
+    public static boolean checkAddress(String address)
     {
         try
         {

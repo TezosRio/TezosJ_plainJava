@@ -394,61 +394,34 @@ public class TezosWallet
 
     // Transfers funds (XTZ) from this wallet to another one.
     // Returns to the user the operation results from Tezos node.
-    public JSONObject send(String from, String to, BigDecimal amount, BigDecimal fee, String gasLimit, String storageLimit) throws Exception
+    public JSONObject send(String from, String to, BigDecimal amount, BigDecimal fee, String gasLimit, String storageLimit) throws RequestValidationException
     {
-        JSONObject result = new JSONObject();
-
-        if ((from != null) && (to != null) && (amount != null))
+        if (from == null || from.trim().length() == 0 || !Crypto.checkAddress(from))
         {
-            if ((Crypto.checkAddress(from) == true) && (Crypto.checkAddress(to) == true))
-            {
-                if (from.length() > 0)
-                {
-                    if (to.length() > 0)
-                    {
-                        if (amount.compareTo(BigDecimal.ZERO) > 0)
-                        {
-                            if (fee.compareTo(BigDecimal.ZERO) > 0)
-                            {
-                               // Prepare keys
-                               EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
-                               encKeys.setEncIv(this.encIv);
-                               encKeys.setEncP(this.encPass);
-
-                               result = rpc.transfer(from, to, amount, fee, gasLimit, storageLimit, encKeys);
-                            }
-                            else
-                            {
-                                throw new java.lang.RuntimeException("Fee must be greater than zero.");
-                            }
-                        }
-                        else
-                        {
-                            throw new java.lang.RuntimeException("Amount must be greater than zero.");
-                        }
-                    }
-                    else
-                    {
-                        throw new java.lang.RuntimeException("Recipient (To field) is mandatory.");
-                    }
-                }
-                else
-                {
-                    throw new java.lang.RuntimeException("Sender (From field) is mandatory.");
-                }
-            }
-            else
-            {
-                throw new java.lang.RuntimeException("Valid Tezos addresses are required in From and To fields.");
-            }
-        }
-        else
-        {
-            throw new java.lang.RuntimeException("The fields: From, To and Amount are required."); // RequestValidationException
+            throw new RequestValidationException("Invalid or missing source address");
         }
 
-        return result;
+        if (to == null || to.trim().length() == 0 || !Crypto.checkAddress(to))
+        {
+            throw new RequestValidationException("Invalid or missing destination address");
+        }
 
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)
+        {
+            throw new RequestValidationException("Invalid amount");
+        }
+
+        if (fee.compareTo(BigDecimal.ZERO) <= 0)
+        {
+            throw new RequestValidationException("Invalid fee");
+        }
+
+        // Prepare keys
+        EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+        encKeys.setEncIv(this.encIv);
+        encKeys.setEncP(this.encPass);
+
+        return rpc.transfer(from, to, amount, fee, gasLimit, storageLimit, encKeys);
     }
 
     private void initStore(byte[] toHash)
