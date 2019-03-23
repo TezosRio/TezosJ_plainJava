@@ -4,8 +4,10 @@ import milfont.com.tezosj.helper.Base58Check;
 
 public class Crypto
 {
-
-    public Boolean checkAddress(String address) throws Exception
+    /**
+     * Validates base58-check address.
+     */
+    public static boolean checkAddress(String address) throws Exception
     {
         try
         {
@@ -18,7 +20,5 @@ public class Crypto
         {
             return  false;
         }
-
     }
-
 }

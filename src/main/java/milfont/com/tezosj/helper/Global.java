@@ -6,7 +6,7 @@ import java.security.KeyStoreException;
 public class Global
 {
 	public static KeyStore myKeyStore = null;
-	public static Boolean ignoreInvalidCertificates = false;
+	public static boolean ignoreInvalidCertificates = false;
 	public static String proxyHost = "";
 	public static String proxyPort = "";
 	public static String defaultProvider = "https://mainnet.tezrpc.me";
@@ -19,4 +19,11 @@ public class Global
 		}
 	}
 	
+	public static Integer tryParseInt(String text) {
+		try {
+		  return Integer.parseInt(text.replaceAll("[^\\d.]", ""));
+		} catch (NumberFormatException e) {
+		  return null;
+		}
+	  }
 }
