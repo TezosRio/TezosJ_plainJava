@@ -29,6 +29,7 @@ import milfont.com.tezosj.helper.Base58;
 import milfont.com.tezosj.helper.Global;
 import milfont.com.tezosj.helper.MySodium;
 import milfont.com.tezosj.helper.Sha256Hash;
+import milfont.com.tezosj.exceptions.*;
 
 import static milfont.com.tezosj.helper.Constants.TEZOS_SYMBOL;
 import static milfont.com.tezosj.helper.Constants.TZJ_KEY_ALIAS;
@@ -53,7 +54,6 @@ public class TezosWallet
     private String encPass, encIv;
 
     private Rpc rpc = null;
-    private Crypto crypto = null;
     private MySodium sodium = null;
     private int myRandomID;
     
@@ -174,18 +174,16 @@ public class TezosWallet
     {
 		// Creates a unique copy and initializes libsodium native library.
 		Random rand = new Random();
-		int  n = rand.nextInt(1000000) + 1;
+		int n = rand.nextInt(1000000) + 1;
 		this.myRandomID = n;
 		this.sodium = new MySodium(String.valueOf(n));
 
         load(pathToFile, p);
-        
     }
 
     private void initDomainClasses()
     {
         this.rpc = new Rpc();
-        this.crypto = new Crypto();
     }
 
     // This method generates the Private Key, Public Key and Public Key hash (Tezos address).
@@ -202,9 +200,8 @@ public class TezosWallet
             builder.append((char) (anInput));
         }
 
-        MnemonicCode mc = new MnemonicCode();
         List<String> items = Arrays.asList((builder.toString()).split(" "));
-        byte[] src_seed = mc.toSeed(items, passphrase);
+        byte[] src_seed = MnemonicCode.toSeed(items, passphrase);
         byte[] seed = Arrays.copyOfRange(src_seed, 0, 32);
 
         byte[] sodiumPrivateKey = zeros(32 * 2);
@@ -255,8 +252,6 @@ public class TezosWallet
         System.arraycopy(prefixedGenericHash, 0, prefixedPKhashWithChecksum, 0, 23);
         System.arraycopy(firstFourOfDoubleChecksum, 0, prefixedPKhashWithChecksum, 23, 4);
 
-        String pkHash = Base58.encode(prefixedPKhashWithChecksum);
-
         // Encrypts and stores Public Key Hash into wallet's class property.
         this.publicKeyHash = encryptBytes(Base58.encode(prefixedPKhashWithChecksum).getBytes(), getEncryptionKey());
 
@@ -269,13 +264,12 @@ public class TezosWallet
 
         MnemonicCode mc = new MnemonicCode();
         byte[] bytes = new byte[20];
-        new java.util.Random().nextBytes(bytes);
+        (new java.util.Random()).nextBytes(bytes);
         ArrayList<String> code = (ArrayList<String>) mc.toMnemonic(bytes);
         result = code.toString();
 
         // Converts the string with the words to a byte array, respecting char values.
-        String strMessage = "";
-        strMessage = (String) code.toString();
+        String strMessage = code.toString();
 
         // Cleans undesired characters from mnemonic words.
         String cleanMnemonic = strMessage.replace("[", "");
@@ -291,7 +285,6 @@ public class TezosWallet
 
         // Stores encypted mnemonic words into wallet's field.
         this.mnemonicWords = encryptBytes(b, getEncryptionKey());
-
     }
 
     // Encryption routine.
@@ -300,10 +293,8 @@ public class TezosWallet
     {
         try
         {
-            SecretKeySpec keySpec = null;
-            Cipher cipher = null;
-            keySpec = new SecretKeySpec(key, "AES");
-            cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, keySpec);
 
             return cipher.doFinal(original);
@@ -320,10 +311,8 @@ public class TezosWallet
     {
         try
         {
-            SecretKeySpec keySpec = null;
-            Cipher cipher = null;
-            keySpec = new SecretKeySpec(key, "AES");
-            cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
 
             return cipher.doFinal(encrypted);
@@ -340,101 +329,55 @@ public class TezosWallet
     {
         byte[] decrypted = decryptBytes(this.mnemonicWords, getEncryptionKey());
 
-        StringBuilder builder = new StringBuilder();
-        for (byte aDecrypted : decrypted)
-        {
-            builder.append((char) (aDecrypted));
-        }
-        return builder.toString();
-
+        return new String(decrypted);
     }
 
     // Retrieves the Public Key Hash (Tezos user address) upon user request.
     public String getPublicKeyHash()
     {
-        if (this.publicKeyHash != null)
+        if (this.publicKeyHash != null || this.publicKeyHash.length > 0)
         {
-            if (this.publicKeyHash.length > 0)
-            {
+            byte[] decrypted = decryptBytes(this.publicKeyHash, getEncryptionKey());
 
-                byte[] decrypted = decryptBytes(this.publicKeyHash, getEncryptionKey());
-
-                StringBuilder builder = new StringBuilder();
-                for (byte aDecrypted : decrypted)
-                {
-                    builder.append((char) (aDecrypted));
-                }
-                return builder.toString();
-            }
-            else
-            {
-                throw new java.lang.RuntimeException("Error getting public key hash.");
-            }
+            return new String(decrypted);   
         }
         else
         {
             throw new java.lang.RuntimeException("Error getting public key hash.");
         }
-
     }
 
     // Retrieves the account balance.
     public String getBalance() throws Exception
     {
-        if (this.publicKeyHash != null)
+        if (this.publicKeyHash == null || this.publicKeyHash.length == 0)
         {
-            if (this.publicKeyHash.length > 0)
-            {
-                if (this.crypto.checkAddress(this.getPublicKeyHash()))
-                {
-
-                    BigDecimal tezBalance = new BigDecimal(String.valueOf(BigDecimal.ZERO));
-
-                    byte[] decrypted = decryptBytes(this.publicKeyHash, getEncryptionKey());
-
-                    StringBuilder builder = new StringBuilder();
-                    for (byte aDecrypted : decrypted)
-                    {
-                        builder.append((char) (aDecrypted));
-                    }
-
-                    // Get balance from Tezos blockchain.
-                    String strBalance = (String) rpc.getBalance(builder.toString()).get("result");
-
-                    // Test if is numeric;
-                    if (isNumeric(strBalance.replaceAll("[^\\d.]", "")))
-                    {
-                        // Test if greater then zero.
-                        if (Integer.parseInt(strBalance.replaceAll("[^\\d.]", "")) > 0)
-                        {
-                            tezBalance = new BigDecimal(strBalance.replaceAll("[^\\d.]", "")).divide(BigDecimal.valueOf(UTEZ));
-                        }
-
-                        // Updates wallet´s balance property for retrieval.
-                        this.balance = String.valueOf(tezBalance) + " " + TEZOS_SYMBOL;
-                    }
-                    else
-                    {
-                        throw new java.lang.RuntimeException(strBalance);
-                    }
-
-                    return this.balance;
-                }
-                else
-                {
-                    throw new java.lang.RuntimeException("Invalid address.");
-                }
-            }
-            else
-            {
-                throw new java.lang.RuntimeException("A valid Tezos address is mandatory.");
-            }
-        }
-        else
-        {
-            throw new java.lang.RuntimeException("No wallet found to get balance from.");
+            throw new RequestValidationException("Wallet is missing the public key hash");
         }
 
+        if (Crypto.checkAddress(this.getPublicKeyHash()))
+        {
+            throw new RequestValidationException(this.getPublicKeyHash() + " is not a valid public key hash");
+        }
+
+        BigDecimal tezBalance = new BigDecimal(String.valueOf(BigDecimal.ZERO));
+
+        byte[] decrypted = decryptBytes(this.publicKeyHash, getEncryptionKey());
+
+        // Get balance from Tezos blockchain.
+        String strBalance = (String) rpc.getBalance(new String(decrypted)).getString("result");
+
+        Integer balance = Global.tryParseInt(strBalance);
+        if (balance == null)
+        {
+            throw new java.lang.RuntimeException("Invalid balance from the node: " + strBalance);
+        }
+
+        tezBalance = new BigDecimal(balance).divide(BigDecimal.valueOf(UTEZ));
+        // Updates wallet balance 
+        this.balance = String.valueOf(tezBalance) + " " + TEZOS_SYMBOL;
+
+        return this.balance;    
     }
 
     // Retrieves wallet alias.
@@ -457,9 +400,8 @@ public class TezosWallet
 
         if ((from != null) && (to != null) && (amount != null))
         {
-            if ((this.crypto.checkAddress(from) == true) && (this.crypto.checkAddress(to) == true))
+            if ((Crypto.checkAddress(from) == true) && (Crypto.checkAddress(to) == true))
             {
-
                 if (from.length() > 0)
                 {
                     if (to.length() > 0)
@@ -468,8 +410,7 @@ public class TezosWallet
                         {
                         	if (fee.compareTo(BigDecimal.ZERO) > 0)
                         	{
-
-                               // Prepares keys.
+                               // Prepare keys
                                EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
                                encKeys.setEncIv(this.encIv);
                                encKeys.setEncP(this.encPass);
@@ -480,7 +421,6 @@ public class TezosWallet
                             {
                                 throw new java.lang.RuntimeException("Fee must be greater than zero.");
                             }
-                        	
                         }
                         else
                         {
@@ -504,7 +444,7 @@ public class TezosWallet
         }
         else
         {
-            throw new java.lang.RuntimeException("The fields: From, To and Amount are required.");
+            throw new java.lang.RuntimeException("The fields: From, To and Amount are required."); // RequestValidationException
         }
 
         return result;
@@ -848,7 +788,6 @@ public class TezosWallet
             {
                 result = false;
             }
-
         }
         catch (Exception e)
         {
