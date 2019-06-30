@@ -253,8 +253,8 @@ public class TezosGateway
     {
         JSONObject result = new JSONObject();
 
-        BigDecimal roundedAmount = amount.setScale(5, BigDecimal.ROUND_HALF_UP);
-        BigDecimal roundedFee = fee.setScale(5, BigDecimal.ROUND_HALF_UP);
+        BigDecimal roundedAmount = amount.setScale(6, BigDecimal.ROUND_HALF_UP);
+        BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
         JSONArray operations = new JSONArray();
         JSONObject revealOperation = new JSONObject();
         JSONObject transaction = new JSONObject();

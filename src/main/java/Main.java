@@ -46,7 +46,7 @@ public class Main
        System.out.println(myLoadedWallet.getBalance());  
        
        // Example of Sending funds.
-       // BigDecimal amount = new BigDecimal("1");
+       // BigDecimal amount = new BigDecimal("0.123456");
        // BigDecimal fee = new BigDecimal("0.00142");
        // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
        // System.out.println(jsonObject.get("result"));
