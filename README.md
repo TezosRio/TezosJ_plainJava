@@ -15,7 +15,7 @@ The library is written in Java and is based on Gradle framework. This repository
 
 - Clone the repository, import into your Java IDE and run the Main class.
 - Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-0.9.9.jar) and add to your project's classpath.
-- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/0.9.9/tezosj-sdk-plain-java-0.9.6.jar) and put in your project's classpath.
+- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/0.9.9/tezosj-sdk-plain-java-0.9.9.jar) and put in your project's classpath.
 - Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:0.9.9'  
 
 
@@ -67,6 +67,23 @@ The library is written in Java and is based on Gradle framework. This repository
        
 	   // Using Conseil Gateway, from Cryptonomic.
 	   // ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");	   
+
+       // Example of origination operation.   
+       // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
+       // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
+       // JSONObject jsonObject = wallet2.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
+       // System.out.println(jsonObject.get("result"));
+
+       // Example of delegation operation.
+       // BigDecimal fee = new BigDecimal("0.001300");
+       // JSONObject jsonObject = wallet2.delegate("kt1_delegatorAddress", "tz1_delegate_address", fee, "", "");
+       // System.out.println(jsonObject.get("result"));
+       
+       // Example of undelegation operation.
+       // BigDecimal fee = new BigDecimal("0.001300");
+       // JSONObject jsonObject = wallet2.undelegate("kt1_delegatorAddress", fee);
+       // System.out.println(jsonObject.get("result"));
+
 
 ## Disclaimer
 
