@@ -64,10 +64,66 @@ public class Rpc {
         catch (Exception e)
         {
             e.printStackTrace();
-            throw new java.lang.RuntimeException("An error occured while trying to do perform an operation. See stacktrace for more info.");
+            throw new java.lang.RuntimeException("An error occured while trying to perform a transfer operation. See stacktrace for more info.");
         }
 
         return result;
 
     }
+
+    public JSONObject delegate(String delegateFrom, String delegateTo, BigDecimal fee, String gasLimit, String storageLimit, EncKeys encKeys)
+    {
+        JSONObject result = new JSONObject();
+
+        try
+        {
+            result = (JSONObject) tezosGateway.sendDelegationOperation(delegateFrom, delegateTo, fee, gasLimit, storageLimit, encKeys);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            throw new java.lang.RuntimeException("An error occured while trying to do perform a delegation operation. See stacktrace for more info.");
+        }
+
+        return result;
+
+    }
+
+    public JSONObject originate(String delegate, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys)
+    {
+        JSONObject result = new JSONObject();
+
+        try
+        {
+            result = (JSONObject) tezosGateway.sendOriginationOperation(delegate, spendable, delegatable, fee, gasLimit, storageLimit, amount, code, storage, encKeys);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            throw new java.lang.RuntimeException("An error occured while trying to do perform an origination operation. See stacktrace for more info.");
+        }
+
+        return result;
+
+    }
+
+    public JSONObject undelegate(String delegateFrom, BigDecimal fee, EncKeys encKeys)
+    {
+        JSONObject result = new JSONObject();
+
+        try
+        {
+            result = (JSONObject) tezosGateway.sendUndelegationOperation(delegateFrom, fee, encKeys);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            throw new java.lang.RuntimeException("An error occured while trying to do perform an undelegation operation. See stacktrace for more info.");
+        }
+
+        return result;
+
+    }
+
+    
 }

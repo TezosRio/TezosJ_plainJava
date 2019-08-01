@@ -879,6 +879,161 @@ public class TezosWallet
     	Global.defaultProvider = provider;
     }
 
+    // v0.9.9
+    
+    // Delegate to.
+    // Returns to the user the operation results from Tezos node.
+    public JSONObject delegate(String delegateFrom, String delegateTo, BigDecimal fee, String gasLimit, String storageLimit) throws Exception
+    {
+        JSONObject result = new JSONObject();
+
+        if ((delegateFrom != null) && (delegateTo != null))
+        {
+            if ((this.crypto.checkAddress(delegateFrom) == true) && (this.crypto.checkAddress(delegateTo) == true))
+            {
+
+                if (delegateFrom.length() > 0)
+                {
+                    if (delegateTo.length() > 0)
+                    {
+                    	if (fee.compareTo(BigDecimal.ZERO) > 0)
+                    	{
+                    		
+                           // Prepares keys.
+                           EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+                           encKeys.setEncIv(this.encIv);
+                           encKeys.setEncP(this.encPass);
+
+                           result = rpc.delegate(delegateFrom, delegateTo, fee, gasLimit, storageLimit, encKeys);
+                    	}
+                        else
+                        {
+                            throw new java.lang.RuntimeException("Fee must be greater than zero.");
+                        }
+                        	
+                    }
+                    else
+                    {
+                        throw new java.lang.RuntimeException("Delegate (delegateTo field) is mandatory.");
+                    }
+                }
+                else
+                {
+                    throw new java.lang.RuntimeException("Delegator (delegateFrom field) is mandatory.");
+                }
+            }
+            else
+            {
+                throw new java.lang.RuntimeException("Valid Tezos addresses are required in delegateFrom and delegateTo fields.");
+            }
+        }
+        else
+        {
+            throw new java.lang.RuntimeException("The fields: delegateFrom, delegateTo are required.");
+        }
+
+        return result;
+
+    }
+
+    // Originate.
+    // Returns to the user the operation results from Tezos node.
+    public JSONObject orginate(String delegate, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage) throws Exception
+    {
+        JSONObject result = new JSONObject();
+
+        if ((delegate != null))
+        {
+            if (this.crypto.checkAddress(delegate) == true)
+            {
+
+               if (delegate.length() > 0)
+               {
+                	if (fee.compareTo(BigDecimal.ZERO) > 0)
+                	{
+                		
+                       // Prepares keys.
+                       EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+                       encKeys.setEncIv(this.encIv);
+                       encKeys.setEncP(this.encPass);
+
+                       result = rpc.originate(delegate, spendable, delegatable, fee, gasLimit, storageLimit, amount, code, storage, encKeys);
+                	}
+                    else
+                    {
+                        throw new java.lang.RuntimeException("Fee must be greater than zero.");
+                    }
+                    	
+                }
+                else
+                {
+                    throw new java.lang.RuntimeException("Delegator (delegateFrom field) is mandatory.");
+                }
+            }
+            else
+            {
+                throw new java.lang.RuntimeException("Valid Tezos address is required in delegate field.");
+            }
+        }
+        else
+        {
+            throw new java.lang.RuntimeException("The field: delegate is required.");
+        }
+
+        return result;
+
+    }
+
+    // Undelegate.
+    // Returns to the user the operation results from Tezos node.
+    public JSONObject undelegate(String delegateFrom, BigDecimal fee) throws Exception
+    {
+        JSONObject result = new JSONObject();
+
+        if (delegateFrom != null)
+        {
+            if (this.crypto.checkAddress(delegateFrom) == true)
+            {
+
+                if (delegateFrom.length() > 0)
+                {
+
+                	if (fee.compareTo(BigDecimal.ZERO) > 0)
+                	{
+                		
+                       // Prepares keys.
+                       EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+                       encKeys.setEncIv(this.encIv);
+                       encKeys.setEncP(this.encPass);
+
+                       result = rpc.undelegate(delegateFrom, fee, encKeys);
+                	}
+                    else
+                    {
+                        throw new java.lang.RuntimeException("Fee must be greater than zero.");
+                    }
+                        	
+                }
+                else
+                {
+                    throw new java.lang.RuntimeException("Delegator (delegateFrom field) is mandatory.");
+                }
+            }
+            else
+            {
+                throw new java.lang.RuntimeException("Valid Tezos address is required in delegateFrom field.");
+            }
+        }
+        else
+        {
+            throw new java.lang.RuntimeException("The field: delegateFrom is required.");
+        }
+
+        return result;
+
+    }
+    
+    
     
 }
 
