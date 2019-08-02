@@ -14,6 +14,10 @@ public class Main
        // Creates a new wallet with a passphrase.
        TezosWallet wallet = new TezosWallet("myPassphrase");
 
+       // Creates (imports) a new wallet with its keys.
+       // TezosWallet wallet = new TezosWallet(privateKey, publicKey, publicKeyHash, passPhrase);
+       
+       // Some environment configuration.
        // wallet.setIgnoreInvalidCertificates(false);
        // wallet.setProxy("", "");
 

@@ -182,6 +182,60 @@ public class TezosWallet
         
     }
 
+    // v1.0.0    
+    public TezosWallet(String privateKey, String publicKey, String publicKeyHash, String passPhrase) throws Exception
+    {
+        // Imports an existing wallet from its keys.
+		
+		resetWallet();
+		this.alias="";
+
+    	// Creates a unique copy and initializes libsodium native library.
+    	Random rand = new Random();
+    	int  n = rand.nextInt(1000000) + 1;
+    	this.myRandomID = n;
+    	this.sodium = new MySodium(String.valueOf(n));
+    	
+        // Converts passPhrase String to a byte array, respecting char values.
+        byte[] z = new byte[passPhrase.length()];
+        for (int i = 0; i < passPhrase.length(); i++)
+        {
+            z[i] = (byte) passPhrase.charAt(i);
+        }
+
+        initStore(z);
+        initDomainClasses();
+		
+		// Converts privateKey String to a byte array, respecting char values.
+        byte[] c = new byte[privateKey.length()];
+        for (int i = 0; i < privateKey.length(); i++)
+        {
+            c[i] = (byte) privateKey.charAt(i);
+        }
+		this.privateKey = encryptBytes(c, getEncryptionKey());
+
+		// Converts publicKey String to a byte array, respecting char values.
+        byte[] d = new byte[publicKey.length()];
+        for (int i = 0; i < publicKey.length(); i++)
+        {
+            d[i] = (byte) publicKey.charAt(i);
+        }
+		this.publicKey = encryptBytes(d, getEncryptionKey());;
+		
+		// Converts publicKeyHash String to a byte array, respecting char values.
+        byte[] e = new byte[publicKeyHash.length()];
+        for (int i = 0; i < publicKeyHash.length(); i++)
+        {
+            e[i] = (byte) publicKeyHash.charAt(i);
+        }
+		this.publicKeyHash = encryptBytes(e, getEncryptionKey());;	
+        
+		// Creates a new set of mnemonic for this wallet.
+        generateMnemonic();		
+		
+	}				
+    // v1.0.0
+        
     private void initDomainClasses()
     {
         this.rpc = new Rpc();
