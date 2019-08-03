@@ -2,5 +2,7 @@
 .vscode/
 bin/
 build/
+out/
+.idea/
 
 .DS_Store 
