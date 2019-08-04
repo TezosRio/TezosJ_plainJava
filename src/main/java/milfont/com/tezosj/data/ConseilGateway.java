@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import milfont.com.tezosj.model.Account;
 import milfont.com.tezosj.model.Transaction;
 
 import okhttp3.MediaType;
@@ -41,10 +42,10 @@ public class ConseilGateway {
     public List<Transaction> getTransactions(String address) throws Exception {
         URL requestURL = new URL(_url, String.format("%s%s", _url.getPath(), "/operations"));
 
-        RequestBody spendQuery = RequestBody.create(JSON, String.format("{\"fields\": [\"timestamp\", \"source\", \"destination\", \"amount\", \"fee\"],\"predicates\": [{\"field\": \"kind\", \"set\": [\"transaction\"], \"operation\": \"eq\"}, {\"field\": \"source\", \"set\": [\"%s\"], \"operation\": \"eq\"}],\"orderBy\": [{\"field\": \"timestamp\", \"direction\": \"desc\"}],\"limit\": 100}", address));
+        RequestBody spendQuery = RequestBody.create(JSON, String.format("{\"fields\": [\"timestamp\", \"source\", \"destination\", \"amount\", \"fee\"],\"predicates\": [{\"field\": \"kind\", \"set\": [\"transaction\"], \"operation\": \"eq\"}, {\"field\": \"source\", \"set\": [\"%s\"], \"operation\": \"eq\"}],\"orderBy\": [{\"field\": \"timestamp\", \"direction\": \"desc\"}],\"limit\": 1000}", address));
         Request spendRequest = new Request.Builder().url(requestURL).addHeader("Content-Type", "application/json").addHeader("apiKey", _apiKey).post(spendQuery).build();
 
-        RequestBody receiveQuery = RequestBody.create(JSON, String.format("{\"fields\": [\"timestamp\", \"source\", \"destination\", \"amount\", \"fee\"],\"predicates\": [{\"field\": \"kind\", \"set\": [\"transaction\"], \"operation\": \"eq\"}, {\"field\": \"destination\", \"set\": [\"%s\"], \"operation\": \"eq\"}],\"orderBy\": [{\"field\": \"timestamp\", \"direction\": \"desc\"}],\"limit\": 100}", address));
+        RequestBody receiveQuery = RequestBody.create(JSON, String.format("{\"fields\": [\"timestamp\", \"source\", \"destination\", \"amount\", \"fee\"],\"predicates\": [{\"field\": \"kind\", \"set\": [\"transaction\"], \"operation\": \"eq\"}, {\"field\": \"destination\", \"set\": [\"%s\"], \"operation\": \"eq\"}],\"orderBy\": [{\"field\": \"timestamp\", \"direction\": \"desc\"}],\"limit\": 1000}", address));
         Request receiveRequest = new Request.Builder().url(requestURL).addHeader("Content-Type", "application/json").addHeader("apiKey", _apiKey).post(receiveQuery).build();
 
         List<Transaction> results = new ArrayList<Transaction>();
@@ -69,6 +70,52 @@ public class ConseilGateway {
         }
 
         results.sort(Comparator.comparingLong(Transaction::getEpoch).reversed());
+        return results;
+    }
+
+    public Account getAccount(String address) throws Exception {
+        URL requestURL = new URL(_url, String.format("%s%s", _url.getPath(), "/accounts"));
+
+        RequestBody accountQuery = RequestBody.create(JSON, String.format("{\"fields\": [\"block_level\", \"balance\", \"delegate_value\", \"account_id\", \"manager\", \"delegate_setable\"],\"predicates\": [{\"field\": \"account_id\", \"set\": [\"%s\"], \"operation\": \"eq\"}],\"orderBy\": [],\"limit\": 1}", address));
+        Request accountRequest = new Request.Builder().url(requestURL).addHeader("Content-Type", "application/json").addHeader("apiKey", _apiKey).post(accountQuery).build();
+
+        Account result = null;
+        try {
+            Response accountResponse = (new OkHttpClient()).newCall(accountRequest).execute();
+            JSONArray s = new JSONArray(accountResponse.body().string());
+
+            result = new Account((JSONObject)s.get(0));
+        } catch (IOException e) {
+            // TODO: uniform exception processing
+        } catch (JSONException e) {
+            // TODO: uniform exception processing
+        }
+
+        return result;
+    }
+
+    public List<String> getManagedAccounts(String address) throws Exception {
+        URL requestURL = new URL(_url, String.format("%s%s", _url.getPath(), "/accounts"));
+
+        RequestBody accountQuery = RequestBody.create(JSON, String.format("{\"fields\": [\"account_id\"],\"predicates\": [{\"field\": \"manager\", \"set\": [\"%s\"], \"operation\": \"eq\"}],\"orderBy\": [],\"limit\": 1000}", address));
+        Request accountRequest = new Request.Builder().url(requestURL).addHeader("Content-Type", "application/json").addHeader("apiKey", _apiKey).post(accountQuery).build();
+
+        List<String> results = new ArrayList<String>();
+        try {
+            Response spendResponse = (new OkHttpClient()).newCall(accountRequest).execute();
+
+            JSONArray s = new JSONArray(spendResponse.body().string());
+            for (Object o : s) {
+                results.add((String)((JSONObject)o).get("account_id"));
+            }
+        } catch (IOException e) {
+            // TODO: uniform exception processing
+        } catch (JSONException e) {
+            // TODO: uniform exception processing
+        } catch (NumberFormatException e) {
+            // TODO: uniform exception processing
+        }
+
         return results;
     }
 }

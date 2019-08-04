@@ -10,6 +10,7 @@ public class Transaction {
     private String _to;
     private long _amount;
     private long _fee;
+    private long _blockLevel;
 
     public Transaction(Date timestamp, String from, String to, long amount, long fee) {
         _timestamp = timestamp;
@@ -17,6 +18,11 @@ public class Transaction {
         _to = to;
         _amount = amount;
         _fee = fee;
+    }
+
+    public Transaction(Date timestamp, String from, String to, long amount, long fee, long blockLevel) {
+        this(timestamp, from, to, amount, fee);
+        _blockLevel = blockLevel;
     }
 
     /**

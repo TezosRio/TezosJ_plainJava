@@ -1,5 +1,5 @@
 # TezosJ_plainjava
-TezosJ SDK plain Java version
+A Java SDK for Tezos node interactions with [Conseil](https://cryptonomic.github.io/Conseil/#/) support.
 
 The TezosJ SDK library enables plain Java developers to create applications that communicates with Tezos blockchain.
 
@@ -18,55 +18,12 @@ The library is written in Java and is based on Gradle framework. This repository
 - Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/1.0.0/tezosj-sdk-plain-java-1.0.0.jar) and put in your project's classpath.
 - Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:1.0.0'  
 
-
 ## Usage
 
-	   // Set proxy, if needed.
-	   // Global.proxyHost = "myProxyHost";
-	   // Global.proxyPort = "myProxyPort";
-	   
-	   // Tells system to ignore invalid certificates, if needed.
-	   // Global.ignoreInvalidCertificates = false;
-
-	   // Creates a new wallet with a passphrase.
-	   TezosWallet wallet = new TezosWallet("myPassphrase");
-
-	   // Shows some wallet data output. 
-	   System.out.println(wallet.getMnemonicWords());
-	   System.out.println(wallet.getPublicKeyHash());
-	   System.out.println(wallet.getBalance());  
-
-	   // Imports a previously owned wallet with mnemonic words and passphrase.
-	   // TezosWallet wallet2 = new TezosWallet("word1 word2 ... word15", "myPassphrase");
-
-	   // Shows some wallet data output. 
-	   // System.out.println(wallet2.getMnemonicWords());
-	   // System.out.println(wallet2.getPublicKeyHash());
-	   // System.out.println(wallet2.getBalance());  
-
-	   // Saves the current wallet from memory to file.
-	   wallet.save("c:\\temp\\mySavedWallet.txt");
-
-	   System.out.println("Saved the wallet to disk.");
-
-	   // Creates a new wallet by reading from file.
-	   TezosWallet myLoadedWallet = new TezosWallet(true, "c:\\temp\\mySavedWallet.txt", "myPassphrase");
-
-	   System.out.println("Loaded the wallet from disk:");
-	   
-	   // Shows loaded wallet data. 
-	   System.out.println(myLoadedWallet.getMnemonicWords());
-	   System.out.println(myLoadedWallet.getPublicKeyHash());
-	   System.out.println(myLoadedWallet.getBalance());  
-	   
-	   // Example of Sending funds.
-	   // BigDecimal amount = new BigDecimal("1");
-	   // BigDecimal fee = new BigDecimal("0.00142");
-	   // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
-	   // System.out.println(jsonObject.get("result"));
-       
-	   // Using Conseil Gateway, from Cryptonomic.
-	   // ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");	   
+```java
+    // Set proxy, if needed.
+    // Global.proxyHost = "myProxyHost";
+    // Global.proxyPort = "myProxyPort";
 
        // Example of origination operation.   
        // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
@@ -84,22 +41,42 @@ The library is written in Java and is based on Gradle framework. This repository
        // JSONObject jsonObject = wallet2.undelegate("kt1_delegatorAddress", fee);
        // System.out.println(jsonObject.get("result"));
 
+    System.out.println("Saved the wallet to disk.");
+
+    // Creates a new wallet by reading from file.
+    TezosWallet myLoadedWallet = new TezosWallet(true, "c:\\temp\\mySavedWallet.txt", "myPassphrase");
+
+    System.out.println("Loaded the wallet from disk:");
+
+    // Shows loaded wallet data.
+    System.out.println(myLoadedWallet.getMnemonicWords());
+    System.out.println(myLoadedWallet.getPublicKeyHash());
+    System.out.println(myLoadedWallet.getBalance());
+
+    // Example of Sending funds.
+    // BigDecimal amount = new BigDecimal("1");
+    // BigDecimal fee = new BigDecimal("0.00142");
+    // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
+    // System.out.println(jsonObject.get("result"));
+
+    // Using Conseil Gateway from Cryptonomic.
+    // ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");
+```
 
 ## Disclaimer
 
-This software is at Beta stage. It is currently experimental and still under development. Many features are not fully tested/implemented yet. This version uses Tezos Betanet (!)
-
+This software is at Beta stage. It is currently experimental and still under development. Many features are not fully tested/implemented yet. This version uses Tezos Mainnet (!)
 
 ## Features
 
-    Create valid Tezos wallet address
-    Import Tezos wallet
-    Check if an address is valid
-    Get account balance
-    Send funds
-    Get list of address transactions through Conseil
+- Create valid Tezos wallet address
+- Import Tezos wallet
+- Check if an address is valid
+- Get account balance
+- Send funds
+- Retrieve account information and transactions via Conseil.
 
-The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos's network real operations (create_account, transfer_token, etc.)
+The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos network real operations (create_account, transfer_token, etc.)
 
 ## Credits
 
