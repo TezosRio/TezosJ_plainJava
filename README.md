@@ -25,38 +25,43 @@ The library is written in Java and is based on Gradle framework. This repository
     // Global.proxyHost = "myProxyHost";
     // Global.proxyPort = "myProxyPort";
 
-       // Example of origination operation.   
-       // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
-       // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
-       // JSONObject jsonObject = wallet2.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
-       // System.out.println(jsonObject.get("result"));
+    // Creates a new wallet with just a passphrase.
+    // TezosWallet wallet = new TezosWallet("myPassphrase");
 
-       // Example of delegation operation.
-       // BigDecimal fee = new BigDecimal("0.001300");
-       // JSONObject jsonObject = wallet2.delegate("kt1_delegatorAddress", "tz1_delegate_address", fee, "", "");
-       // System.out.println(jsonObject.get("result"));
-       
-       // Example of undelegation operation.
-       // BigDecimal fee = new BigDecimal("0.001300");
-       // JSONObject jsonObject = wallet2.undelegate("kt1_delegatorAddress", fee);
-       // System.out.println(jsonObject.get("result"));
+    // Imports a previously owned wallet with mnemonic words and passphrase.
+    // TezosWallet wallet = new TezosWallet("word1, word2, ..., word15", "passphrase");
 
-    System.out.println("Saved the wallet to disk.");
+    // Creates (imports) a new wallet with its keys.
+    // TezosWallet wallet = new TezosWallet(privateKey, publicKey, publicKeyHash, passPhrase);
 
     // Creates a new wallet by reading from file.
-    TezosWallet myLoadedWallet = new TezosWallet(true, "c:\\temp\\mySavedWallet.txt", "myPassphrase");
-
-    System.out.println("Loaded the wallet from disk:");
+    // TezosWallet wallet = new TezosWallet(true, "c:\\temp\\mySavedWallet.txt", "myPassphrase");
 
     // Shows loaded wallet data.
-    System.out.println(myLoadedWallet.getMnemonicWords());
-    System.out.println(myLoadedWallet.getPublicKeyHash());
-    System.out.println(myLoadedWallet.getBalance());
+    // System.out.println(wallet.getMnemonicWords());
+    // System.out.println(wallet.getPublicKeyHash());
+    // System.out.println(wallet.getBalance());
+
+    // Example of origination operation.   
+    // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
+    // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
+    // JSONObject jsonObject = wallet.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
+    // System.out.println(jsonObject.get("result"));
+
+    // Example of delegation operation.
+    // BigDecimal fee = new BigDecimal("0.001300");
+    // JSONObject jsonObject = wallet.delegate("kt1_delegatorAddress", "tz1_delegate_address", fee, "", "");
+    // System.out.println(jsonObject.get("result"));
+       
+    // Example of undelegation operation.
+    // BigDecimal fee = new BigDecimal("0.001300");
+    // JSONObject jsonObject = wallet.undelegate("kt1_delegatorAddress", fee);
+    // System.out.println(jsonObject.get("result"));
 
     // Example of Sending funds.
     // BigDecimal amount = new BigDecimal("1");
     // BigDecimal fee = new BigDecimal("0.00142");
-    // JSONObject jsonObject = wallet2.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
+    // JSONObject jsonObject = wallet.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
     // System.out.println(jsonObject.get("result"));
 
     // Using Conseil Gateway from Cryptonomic.
