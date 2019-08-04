@@ -14,9 +14,9 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-0.9.8.jar) and add to your project's classpath.
-- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/0.9.8/tezosj-sdk-plain-java-0.9.6.jar) and put in your project's classpath.
-- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:0.9.8'
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.0.0.jar) and add to your project's classpath.
+- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/1.0.0/tezosj-sdk-plain-java-1.0.0.jar) and put in your project's classpath.
+- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:1.0.0'  
 
 ## Usage
 
@@ -25,27 +25,21 @@ The library is written in Java and is based on Gradle framework. This repository
     // Global.proxyHost = "myProxyHost";
     // Global.proxyPort = "myProxyPort";
 
-    // Tells system to ignore invalid certificates, if needed.
-    // Global.ignoreInvalidCertificates = false;
+       // Example of origination operation.   
+       // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
+       // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
+       // JSONObject jsonObject = wallet2.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
+       // System.out.println(jsonObject.get("result"));
 
-    // Creates a new wallet with a passphrase.
-    TezosWallet wallet = new TezosWallet("myPassphrase");
-
-    // Shows some wallet data output.
-    System.out.println(wallet.getMnemonicWords());
-    System.out.println(wallet.getPublicKeyHash());
-    System.out.println(wallet.getBalance());
-
-    // Imports a previously owned wallet with mnemonic words and passphrase.
-    // TezosWallet wallet2 = new TezosWallet("word1 word2 ... word15", "myPassphrase");
-
-    // Shows some wallet data output.
-    // System.out.println(wallet2.getMnemonicWords());
-    // System.out.println(wallet2.getPublicKeyHash());
-    // System.out.println(wallet2.getBalance());
-
-    // Saves the current wallet from memory to file.
-    wallet.save("c:\\temp\\mySavedWallet.txt");
+       // Example of delegation operation.
+       // BigDecimal fee = new BigDecimal("0.001300");
+       // JSONObject jsonObject = wallet2.delegate("kt1_delegatorAddress", "tz1_delegate_address", fee, "", "");
+       // System.out.println(jsonObject.get("result"));
+       
+       // Example of undelegation operation.
+       // BigDecimal fee = new BigDecimal("0.001300");
+       // JSONObject jsonObject = wallet2.undelegate("kt1_delegatorAddress", fee);
+       // System.out.println(jsonObject.get("result"));
 
     System.out.println("Saved the wallet to disk.");
 

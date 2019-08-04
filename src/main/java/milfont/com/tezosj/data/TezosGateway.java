@@ -11,9 +11,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import static milfont.com.tezosj.helper.Encoder.HEX;
 import static milfont.com.tezosj.helper.Constants.UTEZ;
-import static milfont.com.tezosj.helper.Constants.OPERATION_KIND_TRANSACTION;
+import static milfont.com.tezosj.helper.Constants.*;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.cert.CertificateException;
@@ -271,7 +270,7 @@ public class TezosGateway
             BigDecimal bdAmount = amount.multiply(BigDecimal.valueOf(UTEZ));
             BigDecimal total = new BigDecimal(((balance.getString("result").replaceAll("\\n", "")).replaceAll("\"", "").replaceAll("'", "")));
             
-            if (total.compareTo(bdAmount) < 0) // Returns -1 if value iss less than amount.
+            if (total.compareTo(bdAmount) < 0) // Returns -1 if value is less than amount.
             {
                // Not enough funds to do the transfer.
                 JSONObject returned = new JSONObject();
@@ -472,14 +471,14 @@ public class TezosGateway
         // If Manager key is not revealed for account...
         if(!isManagerKeyRevealedForAccount(blockHead, pkh))
         {
-            BigDecimal fee = new BigDecimal("0.001267");
+            BigDecimal fee = new BigDecimal("0.001300");
             BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
     		revealOp.put("kind", "reveal");
     		revealOp.put("source", pkh);
     		revealOp.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));  
     		revealOp.put("counter", String.valueOf(counter + 1));
-    		revealOp.put("gas_limit", "11000");
-    		revealOp.put("storage_limit", "300");
+    		revealOp.put("gas_limit", "10100");
+    		revealOp.put("storage_limit", "0");
     		revealOp.put("public_key", publicKey);
         } else {
             revealOp = null;
@@ -600,4 +599,148 @@ public class TezosGateway
         }
         return null;
     }
+    
+    public JSONObject sendDelegationOperation(String delegator, String delegate, BigDecimal fee, String gasLimit, String storageLimit, EncKeys encKeys) throws Exception
+    {
+        JSONObject result = new JSONObject();
+
+        BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
+        JSONArray operations = new JSONArray();
+        JSONObject revealOperation = new JSONObject();
+        JSONObject transaction = new JSONObject();
+        JSONObject head = new JSONObject();
+        JSONObject account = new JSONObject();
+        Integer counter = 0;
+        
+        if (gasLimit == null)
+        {
+            gasLimit = "10100";
+        }
+        else
+        {
+            if ((gasLimit.length() == 0) || (gasLimit.equals("0")))
+            {
+                gasLimit = "10100";
+            }
+        }
+
+        if (storageLimit == null)
+        {
+            storageLimit = "0";
+        }
+        else
+        {
+            if (storageLimit.length() == 0)
+            {
+                storageLimit = "0";
+            }
+        }
+
+        head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+        account = getAccountForBlock(head.get("hash").toString(), delegator);
+        counter = Integer.parseInt(account.get("counter").toString());
+
+        // Append Reveal Operation if needed.
+        revealOperation = appendRevealOperation(head, encKeys, delegator, (counter));
+
+        if (revealOperation != null)
+        {
+            operations.put(revealOperation);
+            counter = counter + 1;
+        }
+        
+        transaction.put("kind", OPERATION_KIND_DELEGATION);
+        transaction.put("source", delegator);
+        transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
+        transaction.put("counter", String.valueOf(counter + 1));
+        transaction.put("storage_limit", storageLimit);
+        transaction.put("gas_limit", gasLimit);        
+        
+        if (delegate.equals("undefined") == false)
+        {
+           transaction.put("delegate", delegate);
+        }
+        
+        operations.put(transaction);
+               
+        result = (JSONObject) sendOperation(operations, encKeys);
+
+        return result;
+        
+        
+   }
+        
+   public JSONObject sendOriginationOperation(String delegate, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys) throws Exception
+   {
+        JSONObject result = new JSONObject();
+
+        BigDecimal roundedAmount = amount.setScale(6, BigDecimal.ROUND_HALF_UP);
+        BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
+        JSONArray operations = new JSONArray();
+        JSONObject revealOperation = new JSONObject();
+        JSONObject transaction = new JSONObject();
+        JSONObject head = new JSONObject();
+        JSONObject account = new JSONObject();
+        Integer counter = 0;
+        
+        if (gasLimit == null)
+        {
+            gasLimit = "10100";
+        }
+        else
+        {
+            if ((gasLimit.length() == 0) || (gasLimit.equals("0")))
+            {
+                gasLimit = "10100";
+            }
+        }
+
+        if (storageLimit == null)
+        {
+            storageLimit = "277";
+        }
+        else
+        {
+            if (storageLimit.length() == 0)
+            {
+                storageLimit = "277";
+            }
+        }
+
+        head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+        account = getAccountForBlock(head.get("hash").toString(), delegate);
+        counter = Integer.parseInt(account.get("counter").toString());
+
+        // Append Reveal Operation if needed.
+        revealOperation = appendRevealOperation(head, encKeys, delegate, (counter));
+
+        if (revealOperation != null)
+        {
+            operations.put(revealOperation);
+            counter = counter + 1;
+        }
+
+        transaction.put("kind", OPERATION_KIND_ORIGINATION);
+        transaction.put("source", delegate);
+        transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));        
+        transaction.put("counter", String.valueOf(counter + 1));
+        transaction.put("gas_limit", gasLimit);
+        transaction.put("storage_limit", storageLimit);
+        transaction.put("manager_pubkey", delegate);
+        transaction.put("balance", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
+        transaction.put("spendable", spendable);
+        transaction.put("delegatable", delegatable);
+        operations.put(transaction);        
+        
+        result = (JSONObject) sendOperation(operations, encKeys);
+
+        return result;
+   }
+   
+   public JSONObject sendUndelegationOperation(String delegator, BigDecimal fee, EncKeys encKeys) throws Exception
+   {
+      return sendDelegationOperation(delegator, "undefined", fee, "", "", encKeys);
+   }
+    
+    
 }

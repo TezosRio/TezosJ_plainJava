@@ -14,8 +14,12 @@ public class Main
        // Creates a new wallet with a passphrase.
        TezosWallet wallet = new TezosWallet("myPassphrase");
 
-       wallet.setIgnoreInvalidCertificates(false);
-       wallet.setProxy("", "");
+       // Creates (imports) a new wallet with its keys.
+       // TezosWallet wallet = new TezosWallet(privateKey, publicKey, publicKeyHash, passPhrase);
+       
+       // Some environment configuration.
+       // wallet.setIgnoreInvalidCertificates(false);
+       // wallet.setProxy("", "");
 
        // Shows some wallet data output. 
        System.out.println(wallet.getMnemonicWords());
@@ -23,7 +27,7 @@ public class Main
        System.out.println(wallet.getBalance());  
 
        // Imports a previously owned wallet with mnemonic words and passphrase.
-       // TezosWallet wallet2 = new TezosWallet("word1 word2 ... word15", "myPassphrase");
+       // TezosWallet wallet2 = new TezosWallet("word1, word2, ..., word15", "passphrase");
 
        // Shows some wallet data output. 
        // System.out.println(wallet2.getMnemonicWords());
@@ -31,7 +35,7 @@ public class Main
        // System.out.println(wallet2.getBalance());  
 
        // Saves the current wallet from memory to file.
-       wallet.save("c:\\temp\\mySavedWallet.txt");
+        wallet.save("c:\\temp\\mySavedWallet.txt");
 
        System.out.println("Saved the wallet to disk.");
 
@@ -53,5 +57,22 @@ public class Main
        
        // Using Conseil Gateway, from Cryptonomic.
        // ConseilGateway cg = new ConseilGateway(new URL("<URL>"), "<APIKEY>", "alphanet");
+
+       // Example of origination operation.   
+       // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
+       // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
+       // JSONObject jsonObject = wallet2.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
+       // System.out.println(jsonObject.get("result"));
+
+       // Example of delegation operation.
+       // BigDecimal fee = new BigDecimal("0.001300");
+       // JSONObject jsonObject = wallet2.delegate("kt1_delegatorAddress", "tz1_delegate_address", fee, "", "");
+       // System.out.println(jsonObject.get("result"));
+       
+       // Example of undelegation operation.
+       // BigDecimal fee = new BigDecimal("0.001300");
+       // JSONObject jsonObject = wallet2.undelegate("kt1_delegatorAddress", fee);
+       // System.out.println(jsonObject.get("result"));
+
    }
 }
