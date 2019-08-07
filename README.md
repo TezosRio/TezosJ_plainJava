@@ -45,7 +45,7 @@ The library is written in Java and is based on Gradle framework. This repository
     // Example of origination operation.   
     // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
     // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
-    // JSONObject jsonObject = wallet.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
+    // JSONObject jsonObject = wallet.originate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
     // System.out.println(jsonObject.get("result"));
 
     // Example of delegation operation.
