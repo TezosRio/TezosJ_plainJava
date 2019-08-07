@@ -1,5 +1,4 @@
 package milfont.com.tezosj.data;
-
 import org.junit.*;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;

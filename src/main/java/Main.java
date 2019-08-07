@@ -61,7 +61,7 @@ public class Main
        // Example of origination operation.   
        // BigDecimal fee = new BigDecimal("0.001300"); // Needed fee for origination.
        // BigDecimal amount = new BigDecimal("2"); // Starting new kt1_delegator address balance.
-       // JSONObject jsonObject = wallet2.orginate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
+       // JSONObject jsonObject = wallet2.originate(wallet2.getPublicKeyHash(), true, true, fee, "", "", amount, "", "");
        // System.out.println(jsonObject.get("result"));
 
        // Example of delegation operation.

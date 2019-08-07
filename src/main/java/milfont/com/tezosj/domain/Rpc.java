@@ -89,13 +89,13 @@ public class Rpc {
 
     }
 
-    public JSONObject originate(String delegate, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys)
+    public JSONObject originate(String from, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys)
     {
         JSONObject result = new JSONObject();
 
         try
         {
-            result = (JSONObject) tezosGateway.sendOriginationOperation(delegate, spendable, delegatable, fee, gasLimit, storageLimit, amount, code, storage, encKeys);
+            result = (JSONObject) tezosGateway.sendOriginationOperation(from, spendable, delegatable, fee, gasLimit, storageLimit, amount, code, storage, encKeys);
         }
         catch (Exception e)
         {

@@ -265,6 +265,7 @@ public class TezosGateway
 
         // Check if address has enough funds to do the transfer operation.
         JSONObject balance = getBalance(from);
+
         if (balance.has("result"))
         {
             BigDecimal bdAmount = amount.multiply(BigDecimal.valueOf(UTEZ));
@@ -278,7 +279,7 @@ public class TezosGateway
 
                 return returned;
             }
-        }
+        }          
         
         if (gasLimit == null)
         {
@@ -670,7 +671,7 @@ public class TezosGateway
         
    }
         
-   public JSONObject sendOriginationOperation(String delegate, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys) throws Exception
+   public JSONObject sendOriginationOperation(String from, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys) throws Exception
    {
         JSONObject result = new JSONObject();
 
@@ -708,25 +709,25 @@ public class TezosGateway
         }
 
         head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
-        account = getAccountForBlock(head.get("hash").toString(), delegate);
+        account = getAccountForBlock(head.get("hash").toString(), from);
         counter = Integer.parseInt(account.get("counter").toString());
 
         // Append Reveal Operation if needed.
-        revealOperation = appendRevealOperation(head, encKeys, delegate, (counter));
+        revealOperation = appendRevealOperation(head, encKeys, from, (counter));
 
         if (revealOperation != null)
         {
             operations.put(revealOperation);
             counter = counter + 1;
         }
-
+        
         transaction.put("kind", OPERATION_KIND_ORIGINATION);
-        transaction.put("source", delegate);
+        transaction.put("source", from);
         transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));        
         transaction.put("counter", String.valueOf(counter + 1));
         transaction.put("gas_limit", gasLimit);
         transaction.put("storage_limit", storageLimit);
-        transaction.put("manager_pubkey", delegate);
+        transaction.put("manager_pubkey", from); 
         transaction.put("balance", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
         transaction.put("spendable", spendable);
         transaction.put("delegatable", delegatable);

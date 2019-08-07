@@ -189,6 +189,7 @@ public class TezosWallet
 		
 		resetWallet();
 		this.alias="";
+		this.mnemonicWords = null;
 
     	// Creates a unique copy and initializes libsodium native library.
     	Random rand = new Random();
@@ -220,7 +221,7 @@ public class TezosWallet
         {
             d[i] = (byte) publicKey.charAt(i);
         }
-		this.publicKey = encryptBytes(d, getEncryptionKey());;
+		this.publicKey = encryptBytes(d, getEncryptionKey());
 		
 		// Converts publicKeyHash String to a byte array, respecting char values.
         byte[] e = new byte[publicKeyHash.length()];
@@ -228,11 +229,8 @@ public class TezosWallet
         {
             e[i] = (byte) publicKeyHash.charAt(i);
         }
-		this.publicKeyHash = encryptBytes(e, getEncryptionKey());;	
-        
-		// Creates a new set of mnemonic for this wallet.
-        generateMnemonic();		
-		
+		this.publicKeyHash = encryptBytes(e, getEncryptionKey());
+        		
 	}				
     // v1.0.0
         
@@ -392,15 +390,20 @@ public class TezosWallet
     // Retrieves mnemonic words upon user request.
     public String getMnemonicWords()
     {
-        byte[] decrypted = decryptBytes(this.mnemonicWords, getEncryptionKey());
+    	StringBuilder builder = new StringBuilder();
+    	
+    	if (this.mnemonicWords != null)
+    	{
+           byte[] decrypted = decryptBytes(this.mnemonicWords, getEncryptionKey());
 
-        StringBuilder builder = new StringBuilder();
-        for (byte aDecrypted : decrypted)
-        {
-            builder.append((char) (aDecrypted));
-        }
-        return builder.toString();
-
+        
+           for (byte aDecrypted : decrypted)
+           {
+               builder.append((char) (aDecrypted));
+           }
+    	}
+        
+    	return builder.toString();
     }
 
     // Retrieves the Public Key Hash (Tezos user address) upon user request.
@@ -992,16 +995,16 @@ public class TezosWallet
 
     // Originate.
     // Returns to the user the operation results from Tezos node.
-    public JSONObject orginate(String delegate, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage) throws Exception
+    public JSONObject originate(String from, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage) throws Exception
     {
         JSONObject result = new JSONObject();
 
-        if ((delegate != null))
+        if ((from != null))
         {
-            if (this.crypto.checkAddress(delegate) == true)
+            if (this.crypto.checkAddress(from) == true)
             {
 
-               if (delegate.length() > 0)
+               if (from.length() > 0)
                {
                 	if (fee.compareTo(BigDecimal.ZERO) > 0)
                 	{
@@ -1011,7 +1014,7 @@ public class TezosWallet
                        encKeys.setEncIv(this.encIv);
                        encKeys.setEncP(this.encPass);
 
-                       result = rpc.originate(delegate, spendable, delegatable, fee, gasLimit, storageLimit, amount, code, storage, encKeys);
+                       result = rpc.originate(from, spendable, delegatable, fee, gasLimit, storageLimit, amount, code, storage, encKeys);
                 	}
                     else
                     {
