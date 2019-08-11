@@ -102,6 +102,8 @@ This software is at Beta stage. It is currently experimental and still under dev
 - Retrieve account information and transactions via Conseil.
 - Originate a KT address.
 - Delegate to a known baker.
+- Undelegate from a known baker.
+- Retrieve a publicKey from a known privateKey.
 
 The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos network real operations (create_account, transfer_token, etc.)
 
