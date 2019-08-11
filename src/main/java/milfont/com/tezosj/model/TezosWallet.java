@@ -1088,9 +1088,7 @@ public class TezosWallet
 
         return result;
 
-    }
-    
-    
+    }    
     
 }
 
