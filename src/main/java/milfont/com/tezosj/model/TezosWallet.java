@@ -56,6 +56,8 @@ public class TezosWallet
     private Crypto crypto = null;
     private MySodium sodium = null;
     private int myRandomID;
+
+    private ArrayList<BatchTransactionItem> transactionBatch = null;
     
     // Constructor with passPhrase.
     // This will create a new wallet and generate new keys and mnemonic words.
@@ -1089,6 +1091,74 @@ public class TezosWallet
         return result;
 
     }    
+    
+    // Clears the transaction batch.
+    public void clearTransactionBatch()
+    {
+    	this.transactionBatch = null;
+    	
+        ArrayList<BatchTransactionItem> transactions = new ArrayList<BatchTransactionItem>();
+        this.transactionBatch = transactions;
+    }
+    
+    // Adds a transaction to the batch.
+    public void addTransactionToBatch(String from, String to, BigDecimal amount, BigDecimal fee) throws Exception
+    {
+    	if (this.transactionBatch != null)
+    	{
+    	   Integer index = 0;
+    	   
+    	   index = this.transactionBatch.size() + 1;
+    	   BatchTransactionItem item = new BatchTransactionItem(from, to, amount, fee, index);
+           this.transactionBatch.add(item);
+    	}
+    	else
+    	{
+       		throw new java.lang.RuntimeException("Cannot add transaction as batch has not been initialized. Call clearTransactionBatch() first.");
+    	}
+    }
+
+    // Adds a transaction to the batch.
+    public ArrayList<BatchTransactionItem> getTransactionList()
+    {
+    	return this.transactionBatch;
+    }
+
+    // Sends all transactions in the batch to the blockchain and clears the batch.
+    public JSONObject flushTransactionBatch() throws Exception
+    {
+    	JSONObject result = new JSONObject();
+    	
+    	if (this.transactionBatch != null)
+    	{
+    		if (this.transactionBatch.isEmpty() == false)
+    		{
+               // Prepares keys.
+               EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+               encKeys.setEncIv(this.encIv);
+               encKeys.setEncP(this.encPass);
+
+               result = rpc.sendBatchTransactions(this.transactionBatch, encKeys);
+               
+               // Clears transaction batch.
+               this.transactionBatch = null;
+               
+    		}
+    		else
+    		{
+    			throw new java.lang.RuntimeException("Cannot send as batch has no transactions. Add some with addTransactionToBatch() first.");    			
+    		}
+    		
+    	}
+    	else
+    	{
+    		throw new java.lang.RuntimeException("Cannot send as batch has not been initialized. Call clearTransactionBatch() first.");
+    	}
+    	
+    	return result;
+    }
+
+    
     
 }
 

@@ -17,13 +17,17 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.lang.Object;
 import milfont.com.tezosj.helper.Base58Check;
 import milfont.com.tezosj.helper.Global;
 import milfont.com.tezosj.helper.MySodium;
+import milfont.com.tezosj.model.BatchTransactionItem;
+import milfont.com.tezosj.model.BatchTransactionItemIndexSorter;
 import milfont.com.tezosj.model.EncKeys;
 import milfont.com.tezosj.model.SignedOperationGroup;
 import milfont.com.tezosj.model.TezosWallet;
@@ -743,5 +747,87 @@ public class TezosGateway
       return sendDelegationOperation(delegator, "undefined", fee, "", "", encKeys);
    }
     
-    
+ 
+   public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys) throws Exception
+   {
+
+	     JSONObject result = new JSONObject();
+	     
+	     JSONArray operations = new JSONArray();
+	     JSONObject account = new JSONObject();
+
+	     BigDecimal roundedAmount;
+	     BigDecimal roundedFee;
+	     JSONObject head;
+	     JSONObject transaction;
+	     JSONObject parameters;
+	     JSONArray argsArray;
+	     Integer counter = 0;
+         BigDecimal fee; 
+	     
+         // Sort transaction batch items by "from" address.
+         // (this is necessary to add the transaction count to each address).
+         Collections.sort(transactions);
+         
+         // Iterates over the transaction batch items, setting the count property of each transaction.
+         // (this will be used to find out the correct transaction counter).
+	     String currentAddress = "";
+         Integer batchTransactionCounter = 0;
+         for(BatchTransactionItem item : transactions)
+		 {
+        	// Sets batchTransactionCounter to 1 every time the address changes.
+            if (item.getFrom().equals(currentAddress) == false)
+            {
+            	batchTransactionCounter = 1;
+            }
+            
+            currentAddress = item.getFrom();
+            item.setCount(batchTransactionCounter);
+            batchTransactionCounter++;
+            
+		 }
+
+         // Sort transaction batch items by original "index" order.
+         // (this is necessary to maintain the original order in which the user added the transactions).
+         Collections.sort(transactions, new BatchTransactionItemIndexSorter());         
+
+         
+	     // Builds the transaction collection to be sent.
+	     for(BatchTransactionItem item : transactions)
+		 {           
+	       roundedAmount = item.getAmount().setScale(6, BigDecimal.ROUND_HALF_UP);
+	       roundedFee = item.getFee().setScale(6, BigDecimal.ROUND_HALF_UP);
+
+		   // Get address counter. 
+		   head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+           account = getAccountForBlock(head.get("hash").toString(), item.getFrom());
+		   counter = Integer.parseInt(account.get("counter").toString());	       
+	       
+	       transaction = new JSONObject();
+	       parameters = new JSONObject();
+	       argsArray = new JSONArray();
+	       	       
+	       transaction.put("destination", item.getTo());
+	       transaction.put("amount", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
+	       transaction.put("storage_limit", "300");
+	       transaction.put("gas_limit", "11000");
+	       transaction.put("counter", String.valueOf(counter + item.getCount()));
+	       transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
+	       transaction.put("source", item.getFrom());
+	       transaction.put("kind", OPERATION_KIND_TRANSACTION);
+	       parameters.put("prim", "Unit");
+	       parameters.put("args", argsArray);
+	       transaction.put("parameters", parameters);
+
+	       // Adds unique transaction to the collection.
+	       operations.put(transaction);
+		 }
+	     
+	     // Sends batch operation.
+	     result = (JSONObject) sendOperation(operations, encKeys);
+
+	     return result;
+	  }
+   
+   
 }

@@ -2,8 +2,10 @@ package milfont.com.tezosj.domain;
 
 import org.json.JSONObject;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 
 import milfont.com.tezosj.data.TezosGateway;
+import milfont.com.tezosj.model.BatchTransactionItem;
 import milfont.com.tezosj.model.EncKeys;
 
 /**
@@ -125,5 +127,24 @@ public class Rpc {
 
     }
 
+ 
+    public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys)
+    {
+        JSONObject result = new JSONObject();
+
+        try
+        {
+            result = (JSONObject) tezosGateway.sendBatchTransactions(transactions, encKeys);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            throw new java.lang.RuntimeException("An error occured while trying to send a batch transactions operation. See stacktrace for more info.");
+        }
+
+        return result;
+
+    }
+    
     
 }
