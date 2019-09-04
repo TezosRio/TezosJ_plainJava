@@ -106,6 +106,18 @@ public class Main
        // JSONObject jsonObject = wallet.flushTransactionBatch();  
        // System.out.println("Batch transaction sent! Returned operation hash is: ");
        // System.out.println(jsonObject.get("result"));
+
        
+       // Synchronously waits for previous operation to be included in a block after sending another one.
+       // (this is to be used if you need to send a sequence of single transactions, having to wait first for each one to be included).
+       
+       // BigDecimal amount = new BigDecimal("0.02");
+       // BigDecimal fee = new BigDecimal("0.00142");
+       // JSONObject jsonObject = wallet.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
+	   // String opHash = (String) jsonObject.get("result");
+	   // Boolean opHashIncluded = wallet.waitForResult(opHash, numberOfBlocksToWait);
+	   // System.out.println(opHashIncluded);
+	   // Now it is safe to send another transaction at this point.
+
    }
 }

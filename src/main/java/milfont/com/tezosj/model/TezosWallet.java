@@ -1159,6 +1159,11 @@ public class TezosWallet
     }
 
     
+    public Boolean waitForResult(String operationHash, Integer numberOfBlocksToWait) throws Exception
+    {
+    	return rpc.waitForResult(operationHash, numberOfBlocksToWait);
+    }
+    
     
 }
 

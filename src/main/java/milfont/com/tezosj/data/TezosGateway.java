@@ -20,6 +20,8 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.lang.Object;
@@ -828,6 +830,136 @@ public class TezosGateway
 
 	     return result;
 	  }
+   
+   
+   public Boolean waitForResult(String operationHash, Integer numberOfBlocksToWait) throws Exception
+   {
+	   Integer currentBlockNumber = 0;
+	   Integer LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
+       JSONObject response = null;
+	   Boolean foundBlockHash = false;
+	   Boolean result = false;
+
+       try
+       {           
+           
+           while ( (result == false) && (currentBlockNumber < LimitBlockNumber) )
+           {
+        
+        	   // Get blockchain header.
+               response = (JSONObject) query("/chains/main/blocks/head/header", null);
+
+               // Acquaire current blockchain block (level) if it is zero yet.
+               if (currentBlockNumber == 0)
+               {
+                  // Sets the initial block number.
+                  currentBlockNumber = (Integer) response.get("level");
+
+                  // Sets the ending block number.
+                  LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
+               }        	   
+        	   
+               // Reset control variables.
+	           foundBlockHash = false;
+	           String blockHash = "";
+
+	           // Wait until current block has a hash.
+	           while (foundBlockHash == false)
+	           {
+	              // Extract block information from current block number.
+	              response = (JSONObject) query("/chains/main/blocks/" + currentBlockNumber, null);
+	              
+	              // Check if block has a hash.
+	              if (response.has("hash"))
+	              {         
+	            	 // Block hash has been found!
+	                 foundBlockHash = true;
+	
+	                 // Get the block hash information.
+	                 blockHash = (String) response.get("hash");
+	                 
+	                 // Increment the current block number;
+	                 currentBlockNumber++;
+	              
+                     // Get the block operations using the block hash.
+                     response = (JSONObject) query("/chains/main/blocks/" + blockHash + "/operations/3", null);
+                 
+                     // Check result to see if desired operation hash is already included in a block.
+                     result = checkResult(response, operationHash);
+                     
+	              }
+
+	              // If operation hash has not been found yet, give blockchain some time until next fetch.
+	              if (result == false)
+	              { 
+                     // Wait 10 seconds to query blockchain again.
+                     TimeUnit.SECONDS.sleep(10);
+	              }
+	           }
+	           
+           }
+           
+       }
+       catch (Exception e)
+       {
+           e.printStackTrace();
+       }
+       
+       return result;
+       
+   }   
+ 
+   public Boolean checkResult(JSONObject blockRead, String operationHash)
+   {
+       Boolean result = false;
+       String hash = ""; 
+       String opHash = "";
+       
+       // Do some cleaning.
+       opHash = operationHash.replace("\"", "");
+       opHash = opHash.replace("\n", "");
+       opHash = opHash.trim();
+       
+       // Define object we will need inside the loop.
+       JSONObject myObject = new JSONObject();
+       
+       try
+       {
+           // Extract the array from the JSONObject "result".
+           JSONArray myArray = (JSONArray) blockRead.get("result");
+    	   
+           // Loop through each element of the array.
+           for (Integer i = 0; i < myArray.length(); i++)
+           {
+        	   // Get current element of the array.
+               myObject = ((JSONObject) ((JSONArray) blockRead.get("result")).get(i));
+
+               // What interests us is the element "hash".
+               hash = myObject.get("hash").toString();
+               
+               // Do some cleaning.
+               hash = hash.replace("\"", "");
+               hash = hash.replace("\n", "");
+               hash = hash.trim();
+
+               // Check if the operation hash we've got from the block is the same we are searching.
+               if (hash.equals(opHash))
+               {
+                   // We've found the hash included in this block!
+            	   result = true;
+            	   break;
+               }
+               
+	        }
+	    }
+	    catch (Exception f)
+	    {
+	        result = false;
+	    }
+       
+        return result;
+       
+   }
    
    
 }

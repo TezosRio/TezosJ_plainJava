@@ -145,6 +145,25 @@ public class Rpc {
         return result;
 
     }
+
     
+    public Boolean waitForResult(String operationHash, Integer numberOfBlocksToWait)
+    {
+        Boolean result = false;
+
+        try
+        {
+            result = (Boolean) tezosGateway.waitForResult(operationHash, numberOfBlocksToWait);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            throw new java.lang.RuntimeException("An error occured while trying to get operation results. See stacktrace for more info.");
+        }
+
+        return result;
+
+    }
+
     
 }
