@@ -766,7 +766,10 @@ public class TezosGateway
 	     JSONArray argsArray;
 	     Integer counter = 0;
          BigDecimal fee; 
-	     
+	     ArrayList<String> revealOperations = null;
+	     JSONObject revealOperation = new JSONObject();
+	     Integer extraCounterOffset = 0;
+         
          // Sort transaction batch items by "from" address.
          // (this is necessary to add the transaction count to each address).
          Collections.sort(transactions);
@@ -793,6 +796,7 @@ public class TezosGateway
          // (this is necessary to maintain the original order in which the user added the transactions).
          Collections.sort(transactions, new BatchTransactionItemIndexSorter());         
 
+         revealOperations = new ArrayList<String>();
          
 	     // Builds the transaction collection to be sent.
 	     for(BatchTransactionItem item : transactions)
@@ -808,12 +812,40 @@ public class TezosGateway
 	       transaction = new JSONObject();
 	       parameters = new JSONObject();
 	       argsArray = new JSONArray();
-	       	       
+	       
+	       // Checks if a reveal operation was not yet added to this transaction address.
+           if (revealOperations.contains(item.getFrom()) == false)
+           {
+        	  // This will guarantee correct use of counter. 
+        	  extraCounterOffset = 0;
+        	  
+	          // Check if a Reveal Operation is needed for current transaction address.
+	          revealOperation = appendRevealOperation(head, encKeys, item.getFrom(), (counter));
+
+	          if (revealOperation != null)
+	          {
+	        	  // Register that a Reveal Operation was needed to be added for this address.
+	        	  revealOperations.add(item.getFrom());
+	        	
+	        	  // Actually ADD the operation.
+	              operations.put(revealOperation);
+	              
+	              // Guarantee that the counter will be handled correctly.
+	              extraCounterOffset = 1;
+	          }
+           }
+           else
+           {
+        	   // If the current address is present in the "control" array list,
+        	   // then we need to consider that an additional operation has been added to that address.
+        	   extraCounterOffset = 1;
+           }
+           
 	       transaction.put("destination", item.getTo());
 	       transaction.put("amount", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
 	       transaction.put("storage_limit", "300");
 	       transaction.put("gas_limit", "11000");
-	       transaction.put("counter", String.valueOf(counter + item.getCount()));
+	       transaction.put("counter", String.valueOf(counter + item.getCount() + extraCounterOffset));
 	       transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
 	       transaction.put("source", item.getFrom());
 	       transaction.put("kind", OPERATION_KIND_TRANSACTION);
@@ -823,6 +855,7 @@ public class TezosGateway
 
 	       // Adds unique transaction to the collection.
 	       operations.put(transaction);
+	       
 		 }
 	     
 	     // Sends batch operation.
