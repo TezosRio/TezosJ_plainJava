@@ -464,7 +464,7 @@ public class TezosWallet
                     if (isNumeric(strBalance.replaceAll("[^\\d.]", "")))
                     {
                         // Test if greater then zero.
-                        if (Integer.parseInt(strBalance.replaceAll("[^\\d.]", "")) > 0)
+                        if (Long.parseLong(strBalance.replaceAll("[^\\d.]", "")) > 0)
                         {
                             tezBalance = new BigDecimal(strBalance.replaceAll("[^\\d.]", "")).divide(BigDecimal.valueOf(UTEZ));
                         }
