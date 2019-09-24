@@ -73,8 +73,11 @@ public class TezosGateway
         Request request = null;
         Proxy proxy=null;
         SSLContext sslcontext = null;
-        OkHttpClient client = new OkHttpClient();
-        Builder myBuilder = client.newBuilder();
+        
+        // Initializes a single shared instance of okHttp client (and builder);
+        Global.initOkhttp();        
+        OkHttpClient client = Global.myOkhttpClient;
+        Builder myBuilder = Global.myOkhttpBuilder;
         
         final MediaType MEDIA_PLAIN_TEXT_JSON = MediaType.parse("application/json");
         String DEFAULT_PROVIDER = Global.defaultProvider;
