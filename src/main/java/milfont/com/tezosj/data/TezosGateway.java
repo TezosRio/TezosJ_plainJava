@@ -46,7 +46,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-public class TezosGateway
+public class TezosGateway 
 {
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType textPlainMT = MediaType.parse("text/plain; charset=utf-8");
@@ -74,7 +74,7 @@ public class TezosGateway
         Proxy proxy=null;
         SSLContext sslcontext = null;
         
-        // Initializes a single shared instance of okHttp client (and builder);
+        // Initializes a single shared instance of okHttp client (and builder). 
         Global.initOkhttp();        
         OkHttpClient client = Global.myOkhttpClient;
         Builder myBuilder = Global.myOkhttpBuilder;

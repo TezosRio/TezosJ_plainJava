@@ -17,7 +17,7 @@ public class Global
 	
 	public static void initKeyStore() throws KeyStoreException
 	{
-		if (myKeyStore == null)
+		if (myKeyStore == null) 
 		{
            myKeyStore = KeyStore.getInstance("JCEKS");
 		}
