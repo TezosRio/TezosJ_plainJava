@@ -13,7 +13,7 @@ public class Global
 	public static String proxyPort = "";
 	public static String defaultProvider = "https://mainnet.tezrpc.me";
 	public static OkHttpClient myOkhttpClient = null;
-	public static Builder myOkhttpBuilder = null;
+	public static Builder myOkhttpBuilder = null; 
 	
 	public static void initKeyStore() throws KeyStoreException
 	{

@@ -51,7 +51,7 @@ public class TezosGateway
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType textPlainMT = MediaType.parse("text/plain; charset=utf-8");
     private static final Integer HTTP_TIMEOUT = 20;
-    private static MySodium sodium = null;
+    private static MySodium sodium = null; 
 
     public TezosGateway()
     {
