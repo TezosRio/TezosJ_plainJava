@@ -753,7 +753,7 @@ public class TezosGateway
    }
     
  
-   public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys) throws Exception
+   public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys, String gasLimit, String storageLimit) throws Exception
    {
 
 	     JSONObject result = new JSONObject();
@@ -773,6 +773,30 @@ public class TezosGateway
 	     JSONObject revealOperation = new JSONObject();
 	     Integer extraCounterOffset = 0;
          
+         if (gasLimit == null)
+         {
+             gasLimit = "11000";
+         }
+         else
+         {
+             if ((gasLimit.length() == 0) || (gasLimit.equals("0")))
+             {
+                 gasLimit = "11000";
+             }
+         }
+
+         if (storageLimit == null)
+         {
+             storageLimit = "300";
+         }
+         else
+         {
+             if (storageLimit.length() == 0)
+             {
+                 storageLimit = "300";
+             }
+         }	     
+	     
          // Sort transaction batch items by "from" address.
          // (this is necessary to add the transaction count to each address).
          Collections.sort(transactions);
@@ -846,8 +870,8 @@ public class TezosGateway
            
 	       transaction.put("destination", item.getTo());
 	       transaction.put("amount", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
-	       transaction.put("storage_limit", "300");
-	       transaction.put("gas_limit", "11000");
+	       transaction.put("storage_limit", gasLimit);
+	       transaction.put("gas_limit", storageLimit);
 	       transaction.put("counter", String.valueOf(counter + item.getCount() + extraCounterOffset));
 	       transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
 	       transaction.put("source", item.getFrom());

@@ -128,13 +128,13 @@ public class Rpc {
     }
 
  
-    public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys)
+    public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys, String gasLimit, String storageLimit)
     {
         JSONObject result = new JSONObject();
 
         try
         {
-            result = (JSONObject) tezosGateway.sendBatchTransactions(transactions, encKeys);
+            result = (JSONObject) tezosGateway.sendBatchTransactions(transactions, encKeys, gasLimit, storageLimit);
         }
         catch (Exception e)
         {

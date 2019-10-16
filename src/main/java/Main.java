@@ -103,7 +103,9 @@ public class Main
        // myBatchTransactionsList = wallet.getTransactionList();
 
        // Sends all transactions in the batch to the blockchain and clears the batch.
-       // JSONObject jsonObject = wallet.flushTransactionBatch();  
+       // JSONObject jsonObject = wallet.flushTransactionBatch();
+       // Or... Specifying gasLimit and storageLimit:
+       // JSONObject jsonObject = wallet.flushTransactionBatch("11000","300");       
        // System.out.println("Batch transaction sent! Returned operation hash is: ");
        // System.out.println(jsonObject.get("result"));
 
@@ -118,6 +120,6 @@ public class Main
 	   // Boolean opHashIncluded = wallet.waitForResult(opHash, numberOfBlocksToWait);
 	   // System.out.println(opHashIncluded);
 	   // Now it is safe to send another transaction at this point.
-
+       
    }
 }

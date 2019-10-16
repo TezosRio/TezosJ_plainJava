@@ -17,6 +17,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Random;
 
+import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -1125,6 +1126,40 @@ public class TezosWallet
     }
 
     // Sends all transactions in the batch to the blockchain and clears the batch.
+    public JSONObject flushTransactionBatch(String gasLimit, String storageLimit) throws Exception
+    {
+    	JSONObject result = new JSONObject();
+    	
+    	if (this.transactionBatch != null)
+    	{
+    		if (this.transactionBatch.isEmpty() == false)
+    		{
+               // Prepares keys.
+               EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+               encKeys.setEncIv(this.encIv);
+               encKeys.setEncP(this.encPass);
+
+               result = rpc.sendBatchTransactions(this.transactionBatch, encKeys, gasLimit, storageLimit);
+               
+               // Clears transaction batch.
+               this.transactionBatch = null;
+               
+    		}
+    		else
+    		{
+    			throw new java.lang.RuntimeException("Cannot send as batch has no transactions. Add some with addTransactionToBatch() first.");    			
+    		}
+    		
+    	}
+    	else
+    	{
+    		throw new java.lang.RuntimeException("Cannot send as batch has not been initialized. Call clearTransactionBatch() first.");
+    	}
+    	
+    	return result;
+    }
+
+    // Sends all transactions in the batch to the blockchain and clears the batch.
     public JSONObject flushTransactionBatch() throws Exception
     {
     	JSONObject result = new JSONObject();
@@ -1138,7 +1173,7 @@ public class TezosWallet
                encKeys.setEncIv(this.encIv);
                encKeys.setEncP(this.encPass);
 
-               result = rpc.sendBatchTransactions(this.transactionBatch, encKeys);
+               result = rpc.sendBatchTransactions(this.transactionBatch, encKeys, null, null);
                
                // Clears transaction batch.
                this.transactionBatch = null;
