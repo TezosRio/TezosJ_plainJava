@@ -46,12 +46,12 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-public class TezosGateway 
+public class TezosGateway
 {
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType textPlainMT = MediaType.parse("text/plain; charset=utf-8");
     private static final Integer HTTP_TIMEOUT = 20;
-    private static MySodium sodium = null; 
+    private static MySodium sodium = null;
 
     public TezosGateway()
     {
@@ -59,7 +59,7 @@ public class TezosGateway
         int n = rand.nextInt(1000000) + 1;
         TezosGateway.sodium = new MySodium(String.valueOf(n));
     }
-    
+
     public static MySodium getSodium()
     {
         return sodium;
@@ -73,12 +73,12 @@ public class TezosGateway
         Request request = null;
         Proxy proxy=null;
         SSLContext sslcontext = null;
-        
-        // Initializes a single shared instance of okHttp client (and builder). 
-        Global.initOkhttp();        
+
+        // Initializes a single shared instance of okHttp client (and builder).
+        Global.initOkhttp();
         OkHttpClient client = Global.myOkhttpClient;
         Builder myBuilder = Global.myOkhttpBuilder;
-        
+
         final MediaType MEDIA_PLAIN_TEXT_JSON = MediaType.parse("application/json");
         String DEFAULT_PROVIDER = Global.defaultProvider;
         RequestBody body = RequestBody.create(textPlainMT, DEFAULT_PROVIDER + endpoint);
@@ -111,7 +111,7 @@ public class TezosGateway
            public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
            public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
            }}, new java.security.SecureRandom());
-        
+
            myBuilder.sslSocketFactory(sslcontext.getSocketFactory());  // To ignore an invalid certificate.
         }
 
@@ -175,10 +175,10 @@ public class TezosGateway
     public JSONObject getAccountManagerForBlock(String blockHash, String accountID) throws Exception
     {
        JSONObject result = (JSONObject) query("/chains/main/blocks/" + blockHash + "/context/contracts/" + accountID + "/manager_key", null);
-    
+
        return result;
     }
-        
+
     // Gets the balance for a given address.
     public JSONObject getBalance(String address) throws Exception
     {
@@ -209,7 +209,7 @@ public class TezosGateway
                 {
                     String err = (String) ((JSONObject)((JSONArray)injectedOperation.get("result")).get(0)).get("error");
                     String reason = "There were errors: '" + err + "'";
-                    
+
                     result.put("result", reason);
                 }
                 else
@@ -228,7 +228,7 @@ public class TezosGateway
                         {
                             String err = (String) ((JSONObject)((JSONArray)injectedOperation.get("result")).get(0)).get("error");
                             String reason = "There were errors: '" + err + "'";
-                            
+
                             result.put("result", reason);
                         }
                         else
@@ -246,7 +246,7 @@ public class TezosGateway
                     result.put("result", "There were errors.");
                 }
             }
-            
+
         }
         else
         {
@@ -279,7 +279,7 @@ public class TezosGateway
         {
             BigDecimal bdAmount = amount.multiply(BigDecimal.valueOf(UTEZ));
             BigDecimal total = new BigDecimal(((balance.getString("result").replaceAll("\\n", "")).replaceAll("\"", "").replaceAll("'", "")));
-            
+
             if (total.compareTo(bdAmount) < 0) // Returns -1 if value is less than amount.
             {
                // Not enough funds to do the transfer.
@@ -288,8 +288,8 @@ public class TezosGateway
 
                 return returned;
             }
-        }          
-        
+        }
+
         if (gasLimit == null)
         {
             gasLimit = "11000";
@@ -326,7 +326,7 @@ public class TezosGateway
             operations.put(revealOperation);
             counter = counter + 1;
         }
-        
+
         transaction.put("destination", to);
         transaction.put("amount", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
         transaction.put("storage_limit", storageLimit);
@@ -340,7 +340,7 @@ public class TezosGateway
         transaction.put("parameters", parameters);
 
         operations.put(transaction);
-               
+
         result = (JSONObject) sendOperation(operations, encKeys);
 
         return result;
@@ -421,7 +421,7 @@ public class TezosGateway
         String firstApplied = appliedOp.toString().replaceAll("\\\\n", "").replaceAll("\\\\", "");
         JSONArray result = new JSONArray(new JSONObject(firstApplied).get("result").toString());
         JSONObject first = (JSONObject) result.get(0);
-        
+
         if (isJSONObject(first.toString()))
         {
             // Check for error.
@@ -452,7 +452,7 @@ public class TezosGateway
                 }
             }
         }
- 
+
         if (errors)
         {
             returned.put("result", reason);
@@ -463,12 +463,12 @@ public class TezosGateway
         }
         return returned;
     }
- 
+
     private JSONObject appendRevealOperation (JSONObject blockHead, EncKeys encKeys, String pkh, Integer counter) throws Exception
     {
         // Create new JSON object for the reveal operation.
         JSONObject revealOp = new JSONObject();
-        
+
         // Get public key from encKeys.
         byte[] bytePk = encKeys.getEncPublicKey();
         byte[] decPkBytes = decryptBytes(bytePk, TezosWallet.getEncryptionKey(encKeys));
@@ -485,7 +485,7 @@ public class TezosGateway
             BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
     		revealOp.put("kind", "reveal");
     		revealOp.put("source", pkh);
-    		revealOp.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));  
+    		revealOp.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
     		revealOp.put("counter", String.valueOf(counter + 1));
     		revealOp.put("gas_limit", "10100");
     		revealOp.put("storage_limit", "0");
@@ -493,17 +493,17 @@ public class TezosGateway
         } else {
             revealOp = null;
         }
-        
+
         return revealOp;
     }
-    
+
     private boolean isManagerKeyRevealedForAccount(JSONObject blockHead, String pkh) throws Exception
     {
        String blockHeadHash = blockHead.getString("hash");
-       
+
        return getAccountManagerForBlock(blockHeadHash, pkh).has("key");
     }
-    
+
     private JSONObject injectOperation(SignedOperationGroup signedOpGroup) throws Exception
     {
         String payload = signedOpGroup.getSbytes();
@@ -609,7 +609,7 @@ public class TezosGateway
         }
         return null;
     }
-    
+
     public JSONObject sendDelegationOperation(String delegator, String delegate, BigDecimal fee, String gasLimit, String storageLimit, EncKeys encKeys) throws Exception
     {
         JSONObject result = new JSONObject();
@@ -621,7 +621,7 @@ public class TezosGateway
         JSONObject head = new JSONObject();
         JSONObject account = new JSONObject();
         Integer counter = 0;
-        
+
         if (gasLimit == null)
         {
             gasLimit = "10100";
@@ -658,28 +658,28 @@ public class TezosGateway
             operations.put(revealOperation);
             counter = counter + 1;
         }
-        
+
         transaction.put("kind", OPERATION_KIND_DELEGATION);
         transaction.put("source", delegator);
         transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
         transaction.put("counter", String.valueOf(counter + 1));
         transaction.put("storage_limit", storageLimit);
-        transaction.put("gas_limit", gasLimit);        
-        
+        transaction.put("gas_limit", gasLimit);
+
         if (delegate.equals("undefined") == false)
         {
            transaction.put("delegate", delegate);
         }
-        
+
         operations.put(transaction);
-               
+
         result = (JSONObject) sendOperation(operations, encKeys);
 
         return result;
-        
-        
+
+
    }
-        
+
    public JSONObject sendOriginationOperation(String from, Boolean spendable, Boolean delegatable, BigDecimal fee, String gasLimit, String storageLimit, BigDecimal amount, String code, String storage, EncKeys encKeys) throws Exception
    {
         JSONObject result = new JSONObject();
@@ -692,7 +692,7 @@ public class TezosGateway
         JSONObject head = new JSONObject();
         JSONObject account = new JSONObject();
         Integer counter = 0;
-        
+
         if (gasLimit == null)
         {
             gasLimit = "10100";
@@ -729,35 +729,35 @@ public class TezosGateway
             operations.put(revealOperation);
             counter = counter + 1;
         }
-        
+
         transaction.put("kind", OPERATION_KIND_ORIGINATION);
         transaction.put("source", from);
-        transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));        
+        transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
         transaction.put("counter", String.valueOf(counter + 1));
         transaction.put("gas_limit", gasLimit);
         transaction.put("storage_limit", storageLimit);
-        transaction.put("manager_pubkey", from); 
+        transaction.put("manager_pubkey", from);
         transaction.put("balance", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
         transaction.put("spendable", spendable);
         transaction.put("delegatable", delegatable);
-        operations.put(transaction);        
-        
+        operations.put(transaction);
+
         result = (JSONObject) sendOperation(operations, encKeys);
 
         return result;
    }
-   
+
    public JSONObject sendUndelegationOperation(String delegator, BigDecimal fee, EncKeys encKeys) throws Exception
    {
       return sendDelegationOperation(delegator, "undefined", fee, "", "", encKeys);
    }
-    
- 
+
+
    public JSONObject sendBatchTransactions(ArrayList<BatchTransactionItem> transactions, EncKeys encKeys, String gasLimit, String storageLimit) throws Exception
    {
 
 	     JSONObject result = new JSONObject();
-	     
+
 	     JSONArray operations = new JSONArray();
 	     JSONObject account = new JSONObject();
 
@@ -768,11 +768,11 @@ public class TezosGateway
 	     JSONObject parameters;
 	     JSONArray argsArray;
 	     Integer counter = 0;
-         BigDecimal fee; 
+         BigDecimal fee;
 	     ArrayList<String> revealOperations = null;
 	     JSONObject revealOperation = new JSONObject();
 	     Integer extraCounterOffset = 0;
-         
+
          if (gasLimit == null)
          {
              gasLimit = "11000";
@@ -795,12 +795,12 @@ public class TezosGateway
              {
                  storageLimit = "300";
              }
-         }	     
-	     
+         }
+
          // Sort transaction batch items by "from" address.
          // (this is necessary to add the transaction count to each address).
          Collections.sort(transactions);
-         
+
          // Iterates over the transaction batch items, setting the count property of each transaction.
          // (this will be used to find out the correct transaction counter).
 	     String currentAddress = "";
@@ -812,40 +812,40 @@ public class TezosGateway
             {
             	batchTransactionCounter = 1;
             }
-            
+
             currentAddress = item.getFrom();
             item.setCount(batchTransactionCounter);
             batchTransactionCounter++;
-            
+
 		 }
 
          // Sort transaction batch items by original "index" order.
          // (this is necessary to maintain the original order in which the user added the transactions).
-         Collections.sort(transactions, new BatchTransactionItemIndexSorter());         
+         Collections.sort(transactions, new BatchTransactionItemIndexSorter());
 
          revealOperations = new ArrayList<String>();
-         
+
 	     // Builds the transaction collection to be sent.
 	     for(BatchTransactionItem item : transactions)
-		 {           
+		 {
 	       roundedAmount = item.getAmount().setScale(6, BigDecimal.ROUND_HALF_UP);
 	       roundedFee = item.getFee().setScale(6, BigDecimal.ROUND_HALF_UP);
 
-		   // Get address counter. 
+		   // Get address counter.
 		   head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
            account = getAccountForBlock(head.get("hash").toString(), item.getFrom());
-		   counter = Integer.parseInt(account.get("counter").toString());	       
-	       
+		   counter = Integer.parseInt(account.get("counter").toString());
+
 	       transaction = new JSONObject();
 	       parameters = new JSONObject();
 	       argsArray = new JSONArray();
-	       
+
 	       // Checks if a reveal operation was not yet added to this transaction address.
            if (revealOperations.contains(item.getFrom()) == false)
            {
-        	  // This will guarantee correct use of counter. 
+        	  // This will guarantee correct use of counter.
         	  extraCounterOffset = 0;
-        	  
+
 	          // Check if a Reveal Operation is needed for current transaction address.
 	          revealOperation = appendRevealOperation(head, encKeys, item.getFrom(), (counter));
 
@@ -853,10 +853,10 @@ public class TezosGateway
 	          {
 	        	  // Register that a Reveal Operation was needed to be added for this address.
 	        	  revealOperations.add(item.getFrom());
-	        	
+
 	        	  // Actually ADD the operation.
 	              operations.put(revealOperation);
-	              
+
 	              // Guarantee that the counter will be handled correctly.
 	              extraCounterOffset = 1;
 	          }
@@ -867,11 +867,11 @@ public class TezosGateway
         	   // then we need to consider that an additional operation has been added to that address.
         	   extraCounterOffset = 1;
            }
-           
+
 	       transaction.put("destination", item.getTo());
 	       transaction.put("amount", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
-	       transaction.put("storage_limit", gasLimit);
-	       transaction.put("gas_limit", storageLimit);
+	       transaction.put("storage_limit", storageLimit);
+	       transaction.put("gas_limit", gasLimit);
 	       transaction.put("counter", String.valueOf(counter + item.getCount() + extraCounterOffset));
 	       transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
 	       transaction.put("source", item.getFrom());
@@ -882,16 +882,16 @@ public class TezosGateway
 
 	       // Adds unique transaction to the collection.
 	       operations.put(transaction);
-	       
+
 		 }
-	     
+
 	     // Sends batch operation.
 	     result = (JSONObject) sendOperation(operations, encKeys);
 
 	     return result;
 	  }
-   
-   
+
+
    public Boolean waitForResult(String operationHash, Integer numberOfBlocksToWait) throws Exception
    {
 	   Integer currentBlockNumber = 0;
@@ -901,11 +901,11 @@ public class TezosGateway
 	   Boolean result = false;
 
        try
-       {           
-           
+       {
+
            while ( (result == false) && (currentBlockNumber < LimitBlockNumber) )
            {
-        
+
         	   // Get blockchain header.
                response = (JSONObject) query("/chains/main/blocks/head/header", null);
 
@@ -917,8 +917,8 @@ public class TezosGateway
 
                   // Sets the ending block number.
                   LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
-               }        	   
-        	   
+               }
+
                // Reset control variables.
 	           foundBlockHash = false;
 	           String blockHash = "";
@@ -928,66 +928,66 @@ public class TezosGateway
 	           {
 	              // Extract block information from current block number.
 	              response = (JSONObject) query("/chains/main/blocks/" + currentBlockNumber, null);
-	              
+
 	              // Check if block has a hash.
 	              if (response.has("hash"))
-	              {         
+	              {
 	            	 // Block hash has been found!
 	                 foundBlockHash = true;
-	
+
 	                 // Get the block hash information.
 	                 blockHash = (String) response.get("hash");
-	                 
+
 	                 // Increment the current block number;
 	                 currentBlockNumber++;
-	              
+
                      // Get the block operations using the block hash.
                      response = (JSONObject) query("/chains/main/blocks/" + blockHash + "/operations/3", null);
-                 
+
                      // Check result to see if desired operation hash is already included in a block.
                      result = checkResult(response, operationHash);
-                     
+
 	              }
 
 	              // If operation hash has not been found yet, give blockchain some time until next fetch.
 	              if (result == false)
-	              { 
+	              {
                      // Wait 10 seconds to query blockchain again.
                      TimeUnit.SECONDS.sleep(10);
 	              }
 	           }
-	           
+
            }
-           
+
        }
        catch (Exception e)
        {
            e.printStackTrace();
        }
-       
+
        return result;
-       
-   }   
- 
+
+   }
+
    public Boolean checkResult(JSONObject blockRead, String operationHash)
    {
        Boolean result = false;
-       String hash = ""; 
+       String hash = "";
        String opHash = "";
-       
+
        // Do some cleaning.
        opHash = operationHash.replace("\"", "");
        opHash = opHash.replace("\n", "");
        opHash = opHash.trim();
-       
+
        // Define object we will need inside the loop.
        JSONObject myObject = new JSONObject();
-       
+
        try
        {
            // Extract the array from the JSONObject "result".
            JSONArray myArray = (JSONArray) blockRead.get("result");
-    	   
+
            // Loop through each element of the array.
            for (Integer i = 0; i < myArray.length(); i++)
            {
@@ -996,7 +996,7 @@ public class TezosGateway
 
                // What interests us is the element "hash".
                hash = myObject.get("hash").toString();
-               
+
                // Do some cleaning.
                hash = hash.replace("\"", "");
                hash = hash.replace("\n", "");
@@ -1009,17 +1009,17 @@ public class TezosGateway
             	   result = true;
             	   break;
                }
-               
+
 	        }
 	    }
 	    catch (Exception f)
 	    {
 	        result = false;
 	    }
-       
+
         return result;
-       
+
    }
-   
-   
+
+
 }
