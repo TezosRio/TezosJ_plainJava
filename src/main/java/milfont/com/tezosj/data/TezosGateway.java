@@ -292,13 +292,13 @@ public class TezosGateway
         
         if (gasLimit == null)
         {
-            gasLimit = "11000";
+            gasLimit = "15400";
         }
         else
         {
             if ((gasLimit.length() == 0) || (gasLimit.equals("0")))
             {
-                gasLimit = "11000";
+                gasLimit = "15400";
             }
         }
 
@@ -335,9 +335,6 @@ public class TezosGateway
         transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
         transaction.put("source", from);
         transaction.put("kind", OPERATION_KIND_TRANSACTION);
-        parameters.put("prim", "Unit");
-        parameters.put("args", argsArray);
-        transaction.put("parameters", parameters);
 
         operations.put(transaction);
                
@@ -483,11 +480,11 @@ public class TezosGateway
         {
             BigDecimal fee = new BigDecimal("0.001300");
             BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
-    		revealOp.put("kind", "reveal");
+            revealOp.put("kind", "reveal");
     		revealOp.put("source", pkh);
     		revealOp.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));  
     		revealOp.put("counter", String.valueOf(counter + 1));
-    		revealOp.put("gas_limit", "10100");
+    		revealOp.put("gas_limit", "10000");
     		revealOp.put("storage_limit", "0");
     		revealOp.put("public_key", publicKey);
         } else {
@@ -499,9 +496,33 @@ public class TezosGateway
     
     private boolean isManagerKeyRevealedForAccount(JSONObject blockHead, String pkh) throws Exception
     {
+       Boolean result = false;
        String blockHeadHash = blockHead.getString("hash");
+       String r = "";
        
-       return getAccountManagerForBlock(blockHeadHash, pkh).has("key");
+       Boolean hasResult = getAccountManagerForBlock(blockHeadHash, pkh).has("result");
+       
+       if (hasResult)
+       {
+          r = (String) getAccountManagerForBlock(blockHeadHash, pkh).get("result");
+       
+          // Do some cleaning.
+          r = r.replace("\"", "");
+          r = r.replace("\n", "");
+          r = r.trim();
+
+          if (r.equals("null") == true)
+          {
+             result = false;
+          }
+          else
+          {
+        	  // Account already revealed.
+              result = true;
+          }
+       }
+
+       return result;
     }
     
     private JSONObject injectOperation(SignedOperationGroup signedOpGroup) throws Exception
@@ -775,13 +796,13 @@ public class TezosGateway
          
          if (gasLimit == null)
          {
-             gasLimit = "11000";
+             gasLimit = "15400";
          }
          else
          {
              if ((gasLimit.length() == 0) || (gasLimit.equals("0")))
              {
-                 gasLimit = "11000";
+                 gasLimit = "15400";
              }
          }
 
@@ -870,15 +891,12 @@ public class TezosGateway
            
 	       transaction.put("destination", item.getTo());
 	       transaction.put("amount", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
-	       transaction.put("storage_limit", gasLimit);
-	       transaction.put("gas_limit", storageLimit);
+	       transaction.put("storage_limit", storageLimit);
+	       transaction.put("gas_limit", gasLimit);
 	       transaction.put("counter", String.valueOf(counter + item.getCount() + extraCounterOffset));
 	       transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
 	       transaction.put("source", item.getFrom());
 	       transaction.put("kind", OPERATION_KIND_TRANSACTION);
-	       parameters.put("prim", "Unit");
-	       parameters.put("args", argsArray);
-	       transaction.put("parameters", parameters);
 
 	       // Adds unique transaction to the collection.
 	       operations.put(transaction);

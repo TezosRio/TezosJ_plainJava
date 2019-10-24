@@ -14,9 +14,9 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import as a Gradle Project into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.0.8.jar) and add to your project's classpath.
-- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/1.0.8/tezosj-sdk-plain-java-1.0.8.jar) and put in your project's classpath.
-- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:1.0.8'  
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.0.9.jar) and add to your project's classpath.
+- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/1.0.9/tezosj-sdk-plain-java-1.0.9.jar) and put in your project's classpath.
+- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:1.0.9'  
 
 ## Usage
 
@@ -26,10 +26,10 @@ The library is written in Java and is based on Gradle framework. This repository
        TezosWallet wallet = new TezosWallet("myPassphrase");
 
        // Or... creates (imports) a new wallet with its keys.
-       // TezosWallet wallet = new TezosWallet(privateKey, publicKey, publicKeyHash, myPassPhrase);
+       // TezosWallet wallet = new TezosWallet(privateKey, publicKey, publicKeyHash, myPassphrase);
 
        // Or... imports a previously owned wallet with mnemonic words and passphrase.
-       // TezosWallet wallet = new TezosWallet("word1, word2, word3, ... word15 ", "myPassPhrase");
+       // TezosWallet wallet = new TezosWallet("word1, word2, word3, ... word15 ", "myPassphrase");
        
        // Some environment configuration.
        // wallet.setIgnoreInvalidCertificates(false);
@@ -57,7 +57,7 @@ The library is written in Java and is based on Gradle framework. This repository
        
        // Example of Sending funds.
        // BigDecimal amount = new BigDecimal("0.123456");
-       // BigDecimal fee = new BigDecimal("0.00142");
+       // BigDecimal fee = new BigDecimal("0.00294");
        // JSONObject jsonObject = wallet.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
        // System.out.println(jsonObject.get("result"));
        
@@ -96,13 +96,13 @@ The library is written in Java and is based on Gradle framework. This repository
        // wallet.clearTransactionBatch(); 
        
        // Adds a first transaction to the batch.
-       // wallet.addTransactionToBatch("from_address", "to_address", new BigDecimal("1"), new BigDecimal("0.00142"));
+       // wallet.addTransactionToBatch("from_address", "to_address", new BigDecimal("1"), new BigDecimal("0.00294"));
 
        // Adds a second transaction to the batch.
-       // wallet.addTransactionToBatch("from_address", "to_address", new BigDecimal("2"), new BigDecimal("0.00142"));
+       // wallet.addTransactionToBatch("from_address", "to_address", new BigDecimal("2"), new BigDecimal("0.00294"));
        
        // Adds a third transaction to the batch.
-       // wallet.addTransactionToBatch("from_address", "to_address", new BigDecimal("3"), new BigDecimal("0.00142"));
+       // wallet.addTransactionToBatch("from_address", "to_address", new BigDecimal("3"), new BigDecimal("0.00294"));
 
        // Note that "from_address" above maybe the manager address or its originated kt1 addresses.
        
@@ -113,7 +113,7 @@ The library is written in Java and is based on Gradle framework. This repository
        // Sends all transactions in the batch to the blockchain and clears the batch.
        // JSONObject jsonObject = wallet.flushTransactionBatch();
        // Or... Specifying gasLimit and storageLimit:
-       // JSONObject jsonObject = wallet.flushTransactionBatch("11000","300");       
+       // JSONObject jsonObject = wallet.flushTransactionBatch("15400","300");       
        // System.out.println("Batch transaction sent! Returned operation hash is: ");
        // System.out.println(jsonObject.get("result"));
 
@@ -122,7 +122,7 @@ The library is written in Java and is based on Gradle framework. This repository
        // (this is to be used if you need to send a sequence of single transactions, having to wait first for each one to be included).
        
        // BigDecimal amount = new BigDecimal("0.02");
-       // BigDecimal fee = new BigDecimal("0.00142");
+       // BigDecimal fee = new BigDecimal("0.00294");
        // JSONObject jsonObject = wallet.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
 	   // String opHash = (String) jsonObject.get("result");
 	   // Boolean opHashIncluded = wallet.waitForResult(opHash, numberOfBlocksToWait);
@@ -150,7 +150,7 @@ This software is at Beta stage. It is currently experimental and still under dev
 - Retrieve a publicKey from a known privateKey.
 - Batch transactions.
 - Synchronously check (wait until) an operation hash has been included in a block.
-- Now allows (1.0.8) specifying gasLimit and storageLimit to batch transactions through flushTransactions method.
+- Now allows (1.0.9) specifying gasLimit and storageLimit to batch transactions through flushTransactions method.
 
 The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos network real operations (create_account, transfer_token, etc.)
 
