@@ -2,7 +2,9 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
 
 import milfont.com.tezosj.data.ConseilGateway;
 import milfont.com.tezosj.domain.Crypto;
@@ -116,10 +118,58 @@ public class Main
        // BigDecimal amount = new BigDecimal("0.02");
        // BigDecimal fee = new BigDecimal("0.00294");
        // JSONObject jsonObject = wallet.send("tz1FromAddress", "tz1ToAddress", amount, fee, "", "");
-	   // String opHash = (String) jsonObject.get("result");
-	   // Boolean opHashIncluded = wallet.waitForResult(opHash, numberOfBlocksToWait);
-	   // System.out.println(opHashIncluded);
-	   // Now it is safe to send another transaction at this point.
+	    // String opHash = (String) jsonObject.get("result");
+	    // Boolean opHashIncluded = wallet.waitForResult(opHash, numberOfBlocksToWait);
+       // System.out.println(opHashIncluded);
+       // Now it is safe to send another transaction at this point.
+
        
+       // Smart Contract calls.
+
+       // Call a smart contract in testnet.
+       // Basically you need to provide the contract KT address, the name of the entrypoint you are calling and a "new String[]" array with the parameters.
+       // IMPORTANT: Before calling the contract, check the name of the called entrypoint and the order of your parameters.
+       // You don't need to create the Micheline parameters. TezosJ will create them for you on-the-fly.
+       // See an example:
+       //    JSONObject jsonObject = wallet.callContractEntryPoint("TZ1_FromAddress",
+       //                                                          "KT1_SmartContractAddress",
+       //                                                          amount,
+       //                                                          fee, 
+       //                                                          gasLimit,
+       //                                                          storageLimit,
+       //                                                          entryPoint,
+       //                                                          new String[]{"param_1", "param_2", "...", "param_n"});
+       //
+       //
+       
+       // Now a functional example (remember that your wallet must be funded and revealed for this to work).
+
+       // Change wallet provider to use testnet.
+       wallet.setProvider("https://tezos-dev.cryptonomic-infra.tech");       
+         
+       // Sets amount and fee for the transaction.
+       BigDecimal amount = new BigDecimal("0");
+       BigDecimal fee = new BigDecimal("0.1");
+       
+       System.out.println("Calling the contract (inserting customer 1, please wait a minute)...");
+       
+       // Calls the contract.
+       JSONObject jsonObject = wallet.callContractEntryPoint(wallet.getPublicKeyHash(), "KT18pK2MGrnTZqyTafUe1sWp2ubJ75eYT86t", amount, fee, "", "", "addCustomer", new String[]{"1000000", "123456789","Bob","98769985"});
+
+       // Waits for the transaction to be included, so that we can call the contract once more.
+       String opHash = (String) jsonObject.get("result");
+       Boolean opHashIncluded = wallet.waitForResult(opHash, 5);
+       System.out.println(opHashIncluded + " " + opHash);
+
+       System.out.println("Calling the contract (insert customer 2, please wait a minute)...");
+
+       // Calls the contract again.
+       jsonObject = wallet.callContractEntryPoint(wallet.getPublicKeyHash(), "KT18pK2MGrnTZqyTafUe1sWp2ubJ75eYT86t", amount, fee, "", "", "addCustomer", new String[]{"2000000", "987654321","Alice","97788657"});
+
+       // Waits for the transaction to be included, so that we may call the contract once more.
+       opHash = (String) jsonObject.get("result");
+       opHashIncluded = wallet.waitForResult(opHash, 5);
+       System.out.println(opHashIncluded + " " + opHash);
+	   
    }
 }
