@@ -14,9 +14,9 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import as a Gradle Project into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.1.0.jar) and add to your project's classpath.
-- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/1.1.0/tezosj-sdk-plain-java-1.1.0.jar) and put in your project's classpath.
-- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:1.1.0'  
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.1.1.jar) and add to your project's classpath.
+- Or (soon)... Download the JAR file from JCENTER (bintray.com/milfont/tezos/tezosj_plainjava/1.1.1/tezosj-sdk-plain-java-1.1.1.jar) and put in your project's classpath.
+- Or (soon)... Add to your build.gradle dependencies: compile 'com.milfont.tezos:tezosj_plainjava:1.1.1'  
 
 ## Usage
 
@@ -164,7 +164,7 @@ The library is written in Java and is based on Gradle framework. This repository
 
        // Waits for the transaction to be included, so that we can call the contract once more.
        String opHash = (String) jsonObject.get("result");
-       Boolean opHashIncluded = wallet.waitForResult(opHash, 5);
+       Boolean opHashIncluded = wallet.waitForResult(opHash, 3);
        System.out.println(opHashIncluded + " " + opHash);
 
        System.out.println("Calling the contract (insert customer 2, please wait a minute)...");
@@ -174,7 +174,7 @@ The library is written in Java and is based on Gradle framework. This repository
 
        // Waits for the transaction to be included, so that we may call the contract once more.
        opHash = (String) jsonObject.get("result");
-       opHashIncluded = wallet.waitForResult(opHash, 5);
+       opHashIncluded = wallet.waitForResult(opHash, 3);
        System.out.println(opHashIncluded + " " + opHash);
 
 ```
@@ -198,7 +198,8 @@ This software is at Beta stage. It is currently experimental and still under dev
 - Batch transactions.
 - Synchronously check (wait until) an operation hash has been included in a block.
 - Now allows (1.0.9) specifying gasLimit and storageLimit to batch transactions through flushTransactions method.
-- NEW (1.1.0): Smart Contract call feature with automatic Micheline parameter generator.
+- (1.1.0): Smart Contract call feature with automatic Micheline parameter generator.
+- NEW (1.1.1): Corrected bug in contract int parameter handling.
 
 The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos network real operations (create_account, transfer_token, etc.)
 
