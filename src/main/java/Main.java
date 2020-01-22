@@ -158,7 +158,7 @@ public class Main
 
        // Waits for the transaction to be included, so that we can call the contract once more.
        String opHash = (String) jsonObject.get("result");
-       Boolean opHashIncluded = wallet.waitForResult(opHash, 5);
+       Boolean opHashIncluded = wallet.waitForResult(opHash, 3);
        System.out.println(opHashIncluded + " " + opHash);
 
        System.out.println("Calling the contract (insert customer 2, please wait a minute)...");
@@ -168,7 +168,7 @@ public class Main
 
        // Waits for the transaction to be included, so that we may call the contract once more.
        opHash = (String) jsonObject.get("result");
-       opHashIncluded = wallet.waitForResult(opHash, 5);
+       opHashIncluded = wallet.waitForResult(opHash, 3);
        System.out.println(opHashIncluded + " " + opHash);
 	   
    }

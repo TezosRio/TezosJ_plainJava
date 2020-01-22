@@ -1210,6 +1210,9 @@ public class TezosGateway
       {
          switch (typesList.get(i))
          {
+            case "int":
+                typesList.set(i, "int");
+                break;
             case "nat":
                typesList.set(i, "int");
                break;
