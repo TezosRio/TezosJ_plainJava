@@ -1,5 +1,7 @@
 package milfont.com.tezosj.model;
 
+import milfont.com.tezosj.helper.*;
+import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.crypto.MnemonicCode;
 import org.json.JSONObject;
 
@@ -21,15 +23,13 @@ import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import milfont.com.tezosj.domain.Crypto;
 import milfont.com.tezosj.domain.Rpc;
-import milfont.com.tezosj.helper.Base58;
-import milfont.com.tezosj.helper.Global;
-import milfont.com.tezosj.helper.MySodium;
-import milfont.com.tezosj.helper.Sha256Hash;
 
 import static milfont.com.tezosj.helper.Constants.TEZOS_SYMBOL;
 import static milfont.com.tezosj.helper.Constants.TZJ_KEY_ALIAS;
@@ -235,6 +235,101 @@ public class TezosWallet
       this.publicKeyHash = encryptBytes(e, getEncryptionKey());
 
    }
+
+   public TezosWallet(String encryptedPrivateKey, String privateKeyPassword, String publicKey, String publicKeyHash, String passPhrase) throws Exception {
+      resetWallet();
+      this.alias="";
+      this.mnemonicWords = null;
+
+      // validate encryptedPrivateKey prefix
+      byte[] edeskPrefix = {(byte) 7, (byte) 90, (byte) 60, (byte) 179, (byte)41};
+      byte[] decodeKey = Base58Check.decode(encryptedPrivateKey);
+
+      if (!Arrays.equals(edeskPrefix, Arrays.copyOf(decodeKey, 5))){
+         throw new RuntimeException("the encryptedPrivateKey must be a encrypted PrivateKey has the prefix 'edesk'");
+      }
+      // Creates a unique copy and initializes libsodium native library.
+      Random rand = new Random();
+      int  n = rand.nextInt(1000000) + 1;
+      this.myRandomID = n;
+      this.sodium = new MySodium(String.valueOf(n));
+
+      // Converts passPhrase String to a byte array, respecting char values.
+      byte[] z = new byte[passPhrase.length()];
+      for (int i = 0; i < passPhrase.length(); i++)
+      {
+         z[i] = (byte) passPhrase.charAt(i);
+      }
+
+      initStore(z);
+      initDomainClasses();
+
+      // decrypt private key pass
+      byte[] salt = new byte[8];
+      System.arraycopy(decodeKey, 5, salt, 0, 8);
+      byte[] cipherText = new byte[48];
+      System.arraycopy(decodeKey, 13, cipherText, 0, 48);
+
+      PBEKeySpec pbeKeySpec = new PBEKeySpec(privateKeyPassword.toCharArray(), salt, 32768, 256);
+      SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+      byte[] key = skf.generateSecret(pbeKeySpec).getEncoded();
+
+      byte[] pass = new byte[32];
+      sodium.crypto_secretbox_open_easy(pass, cipherText, 48, new byte[]{},key);
+
+      byte[] sodiumPrivateKey = new byte[64];
+      byte[] sodiumPublicKey = new byte[32];
+      int r = sodium.crypto_sign_seed_keypair(sodiumPublicKey, sodiumPrivateKey, pass);
+
+      byte[] edpkPrefix = {(byte) 13, (byte) 15, (byte) 37, (byte) 217};
+      byte[] edskPrefix = {(byte) 43, (byte) 246, (byte) 78, (byte) 7};
+      byte[] tz1Prefix = {(byte) 6, (byte) 161, (byte) 159};
+
+      // Validate Tezos Public Key.
+      byte[] prefixedPubKey = new byte[36];
+      System.arraycopy(edpkPrefix, 0, prefixedPubKey, 0, 4);
+      System.arraycopy(sodiumPublicKey, 0, prefixedPubKey, 4, 32);
+
+      byte[] firstFourOfDoubleChecksum = Sha256Hash.hashTwiceThenFirstFourOnly(prefixedPubKey);
+      byte[] prefixedPubKeyWithChecksum = new byte[40];
+      System.arraycopy(prefixedPubKey, 0, prefixedPubKeyWithChecksum, 0, 36);
+      System.arraycopy(firstFourOfDoubleChecksum, 0, prefixedPubKeyWithChecksum, 36, 4);
+
+      byte[] publicKeyBytes  = Base58.encode(prefixedPubKeyWithChecksum).getBytes();
+
+      StringBuilder builder = new StringBuilder();
+      for (byte anInput : publicKeyBytes){
+         builder.append((char) (anInput));
+      }
+      if(!StringUtils.equals(builder.toString(), publicKey)) {
+         throw new RuntimeException("the encryptedPrivateKey is not correct for the public key");
+      }
+
+      // Encrypts and stores Public Key into wallet's class property.
+      this.publicKey = encryptBytes(Base58.encode(prefixedPubKeyWithChecksum).getBytes(), getEncryptionKey());
+
+      byte[] prefixedSecKey = new byte[68];
+      System.arraycopy(edskPrefix, 0, prefixedSecKey, 0, 4);
+      System.arraycopy(sodiumPrivateKey, 0, prefixedSecKey, 4, 64);
+
+      firstFourOfDoubleChecksum = Sha256Hash.hashTwiceThenFirstFourOnly(prefixedSecKey);
+      byte[] prefixedSecKeyWithChecksum = new byte[72];
+      System.arraycopy(prefixedSecKey, 0, prefixedSecKeyWithChecksum, 0, 68);
+      System.arraycopy(firstFourOfDoubleChecksum, 0, prefixedSecKeyWithChecksum, 68, 4);
+
+      // Encrypts and stores Private Key into wallet's class property.
+      this.privateKey = encryptBytes(Base58.encode(prefixedSecKeyWithChecksum).getBytes(), getEncryptionKey());
+
+      // Converts publicKeyHash String to a byte array, respecting char values.
+      byte[] e = new byte[publicKeyHash.length()];
+      for (int i = 0; i < publicKeyHash.length(); i++)
+      {
+         e[i] = (byte) publicKeyHash.charAt(i);
+      }
+      this.publicKeyHash = encryptBytes(e, getEncryptionKey());
+   }
+
+
    // v1.0.0
 
    private void initDomainClasses()

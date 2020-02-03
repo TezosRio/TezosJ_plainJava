@@ -22,6 +22,9 @@ public class Main
        // Or... creates (imports) a new wallet with its keys.
        // TezosWallet wallet = new TezosWallet(privateKey, publicKey, publicKeyHash, myPassphrase);
 
+       // Or... creates (imports) a new wallet with its encrypted private key (which has 'edesk' prefix) and the corresponding private key password.
+       // TezosWallet wallet = new TezosWallet(encryptedPrivateKey, privateKeyPassword, publicKey, publicKeyHash, myPassphrase);
+
        // Or... imports a previously owned wallet with mnemonic words and passphrase.
        // TezosWallet wallet = new TezosWallet("word1, word2, word3, ... word15 ", "myPassphrase");
        
