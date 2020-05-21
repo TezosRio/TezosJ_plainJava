@@ -1,8 +1,3 @@
-////////////////////////////////////////////////////////////////////
-// WARNING - This software uses the real Tezos Betanet blockchain.
-//           Use it with caution.
-////////////////////////////////////////////////////////////////////
-
 package milfont.com.tezosj.data;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -11,7 +6,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mockito.asm.tree.InnerClassNode;
 
 import static milfont.com.tezosj.helper.Encoder.HEX;
 import static milfont.com.tezosj.helper.Constants.UTEZ;
@@ -27,11 +21,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.Object;
-import java.lang.invoke.SwitchPoint;
 
 import milfont.com.tezosj.helper.Base58Check;
 import milfont.com.tezosj.helper.Global;
@@ -53,7 +48,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 public class TezosGateway
 {
@@ -212,64 +206,101 @@ public class TezosGateway
       forgedOperationGroup = forgeOperations(head, operations);
 
       SignedOperationGroup signedOpGroup = signOperationGroup(forgedOperationGroup, encKeys);
-      String operationGroupHash = computeOperationHash(signedOpGroup);
-      JSONObject appliedOp = applyOperation(head, operations, operationGroupHash, forgedOperationGroup, signedOpGroup);
-      JSONObject opResult = checkAppliedOperationResults(appliedOp);
-
-      if(opResult.get("result").toString().length() == 0)
+      
+      if (signedOpGroup == null) // User cancelled the operation.
       {
-         JSONObject injectedOperation = injectOperation(signedOpGroup);
-         if(isJSONArray(injectedOperation.toString()))
+         result.put("result", "There were errors: 'User has cancelled the operation'");
+         return result;
+      }
+      else
+      {
+         
+         String operationGroupHash = computeOperationHash(signedOpGroup);
+         JSONObject appliedOp = applyOperation(head, operations, operationGroupHash, forgedOperationGroup, signedOpGroup);
+         JSONObject opResult = checkAppliedOperationResults(appliedOp);
+   
+         if(opResult.get("result").toString().length() == 0)
          {
-            if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("error"))
+            JSONObject injectedOperation = injectOperation(signedOpGroup);
+            if(isJSONArray(injectedOperation.toString()))
             {
-               String err = (String) ((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).get("error");
-               String reason = "There were errors: '" + err + "'";
-
-               result.put("result", reason);
-            }
-            else
-            {
-               result.put("result", "");
-            }
-
-         }
-         else if(isJSONObject(injectedOperation.toString()))
-         {
-            if(injectedOperation.has("result"))
-            {
-               if(isJSONArray(injectedOperation.get("result").toString()))
+               if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("error"))
                {
-                  if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("error"))
+                  String err = (String) ((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).get("error");
+                  String reason = "There were errors: '" + err + "'";
+   
+                  result.put("result", reason);
+               }
+               else
+               {
+                  result.put("result", "");
+               }
+               if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("Error"))
+               {
+                  String err = (String) ((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).get("Error");
+                  String reason = "There were errors: '" + err + "'";
+   
+                  result.put("result", reason);
+               }
+               else
+               {
+                  result.put("result", "");
+               }
+   
+            }
+            else if(isJSONObject(injectedOperation.toString()))
+            {
+               if(injectedOperation.has("result"))
+               {
+                  if(isJSONArray(injectedOperation.get("result").toString()))
                   {
-                     String err = (String) ((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0))
-                           .get("error");
-                     String reason = "There were errors: '" + err + "'";
-
-                     result.put("result", reason);
+                     if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("error"))
+                     {
+                        String err = (String) ((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0))
+                              .get("error");
+                        String reason = "There were errors: '" + err + "'";
+   
+                        result.put("result", reason);
+                     }
+                     else if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("kind"))
+                     {
+                        if(((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).has("msg"))
+                        {
+                           String err = (String) ((JSONObject) ((JSONArray) injectedOperation.get("result")).get(0)).get("msg");
+                           String reason = "There were errors: '" + err + "'";
+   
+                           result.put("result", reason);
+                        }
+                        else
+                        {
+                           result.put("result", "");
+                        }
+   
+                        
+                     }
+                     else
+                     {
+                        result.put("result", "");
+                     }
+   
                   }
                   else
                   {
-                     result.put("result", "");
+                     result.put("result", injectedOperation.get("result"));
                   }
                }
                else
                {
-                  result.put("result", injectedOperation.get("result"));
+                  result.put("result", "There were errors.");
                }
             }
-            else
-            {
-               result.put("result", "There were errors.");
-            }
+   
          }
-
+         else
+         {
+            result.put("result", opResult.get("result").toString());
+         }
       }
-      else
-      {
-         result.put("result", opResult.get("result").toString());
-      }
-
       return result;
    }
 
@@ -366,11 +397,28 @@ public class TezosGateway
 
    private SignedOperationGroup signOperationGroup(String forgedOperation, EncKeys encKeys) throws Exception
    {
-      JSONObject signed = sign(HEX.decode(forgedOperation), encKeys, "03");
-
-      // Prepares the object to be returned.
-      byte[] workBytes = ArrayUtils.addAll(HEX.decode(forgedOperation), HEX.decode((String) signed.get("sig")));
-      return new SignedOperationGroup(workBytes, (String) signed.get("edsig"), (String) signed.get("sbytes"));
+      JSONObject signed =null;
+      
+      if((Global.ledgerDerivationPath.isEmpty()==false)&&(Global.ledgerTezosFolderPath.isEmpty()==false))
+      {
+         signed = signWithLedger(HEX.decode(forgedOperation), "03");
+      }
+      else
+      {
+         // Traditional signing.
+         signed = sign(HEX.decode(forgedOperation), encKeys, "03");   
+      }
+      
+      if (signed == null) // User cancelled the operation.
+      {
+         return null;
+      }
+      else
+      {
+         // Prepares the object to be returned.
+         byte[] workBytes = ArrayUtils.addAll(HEX.decode(forgedOperation), HEX.decode((String) signed.get("sig")));
+         return new SignedOperationGroup(workBytes, (String) signed.get("edsig"), (String) signed.get("sbytes"));
+      }
    }
 
    private String forgeOperations(JSONObject blockHead, JSONArray operations) throws Exception
@@ -505,14 +553,14 @@ public class TezosGateway
       // If Manager key is not revealed for account...
       if(!isManagerKeyRevealedForAccount(blockHead, pkh))
       {
-         BigDecimal fee = new BigDecimal("0.001300");
+         BigDecimal fee = new BigDecimal("0.002490");
          BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
          revealOp.put("kind", "reveal");
          revealOp.put("source", pkh);
          revealOp.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
          revealOp.put("counter", String.valueOf(counter + 1));
-         revealOp.put("gas_limit", "10000");
-         revealOp.put("storage_limit", "0");
+         revealOp.put("gas_limit", "15400");
+         revealOp.put("storage_limit", "300");
          revealOp.put("public_key", publicKey);
       }
       else
@@ -569,15 +617,11 @@ public class TezosGateway
 
    public JSONObject sign(byte[] bytes, EncKeys keys, String watermark) throws Exception
    {
-      // Access wallet keys to have authorization to perform the operation.
-      byte[] byteSk = keys.getEncPrivateKey();
-      byte[] decSkBytes = decryptBytes(byteSk, TezosWallet.getEncryptionKey(keys));
+      JSONObject response = new JSONObject();
 
-      StringBuilder builder = new StringBuilder();
-      for(byte decSkByte : decSkBytes)
-      {
-         builder.append((char) (decSkByte));
-      }
+      // Access wallet keys to have authorization to perform the operation.
+      byte[] byteSk = keys.getEncPrivateKey();     
+      byte[] decSkBytes = decryptBytes(byteSk, TezosWallet.getEncryptionKey(keys));
 
       // First, we remove the edsk prefix from the decoded private key bytes.
       byte[] edskPrefix =
@@ -616,15 +660,86 @@ public class TezosGateway
       String sbytes = HEX.encode(bytes) + HEX.encode(sig);
 
       // Now, with all needed values ready, we create and deliver the response.
-      JSONObject response = new JSONObject();
       response.put("bytes", HEX.encode(bytes));
       response.put("sig", HEX.encode(sig));
       response.put("edsig", edsig);
       response.put("sbytes", sbytes);
-
+      
       return response;
+      
    }
 
+   public JSONObject signWithLedger(byte[] bytes, String watermark) throws Exception
+   {
+      JSONObject response = new JSONObject();
+      String watermarkedForgedOperationBytesHex = "";
+
+      byte[] workBytes = ArrayUtils.addAll(bytes);
+
+      if(watermark != null)
+      {
+         byte[] wmBytes = HEX.decode(watermark);
+         workBytes = ArrayUtils.addAll(wmBytes, workBytes);
+      }
+
+      watermarkedForgedOperationBytesHex = HEX.encode(workBytes);
+      
+      // There is a Ledger hardware wallet configured. Signing will be done with it.
+      Runtime rt = Runtime.getRuntime();
+      String[] commands = { Global.ledgerTezosFolderPath + Global.ledgerTezosFilePath, Global.ledgerDerivationPath, watermarkedForgedOperationBytesHex };
+
+      try
+      {
+         Process proc = rt.exec(commands);
+   
+         BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+   
+         // read the output from the command
+         String s = "", signature="", error = "";
+         while ((s = stdInput.readLine()) != null)
+         {
+          signature=signature + s;
+         }
+            
+         JSONObject jsonObject = new JSONObject(signature);
+         String ledgerSig = jsonObject.getString("signature"); 
+         
+         String r = "";
+         while ((r = stdError.readLine()) != null)
+         {
+            error = error + r;
+         }
+   
+         byte[] sig = new byte[64];
+         sig = HEX.decode(ledgerSig);
+   
+   
+         // To create the edsig, we need to concatenate the edsig prefix with the sig and
+         // then encode it.
+         byte[] edsigPrefix =
+         { 9, (byte) 245, (byte) 205, (byte) 134, 18 };
+         byte[] edsigPrefixedSig = new byte[edsigPrefix.length + sig.length];
+         edsigPrefixedSig = ArrayUtils.addAll(edsigPrefix, sig);
+         String edsig = Base58Check.encode(edsigPrefixedSig);
+   
+         // The sbytes will be the concatenation of bytes (in hex) + sig (in hex).
+         String sbytes = HEX.encode(bytes) + HEX.encode(sig);
+         
+         // Now, with all needed values ready, we create and deliver the response.
+         response.put("bytes", HEX.encode(bytes));
+         response.put("sig", HEX.encode(sig));
+         response.put("edsig", edsig);
+         response.put("sbytes", sbytes);
+      }
+      catch(Exception e)
+      {
+         response = null;   
+      }
+      
+      return response;
+   }
+   
    // Tests if a string is a valid JSON.
    private Boolean isJSONObject(String myStr)
    {
@@ -757,25 +872,25 @@ public class TezosGateway
 
       if(gasLimit == null)
       {
-         gasLimit = "10100";
+         gasLimit = "15555";
       }
       else
       {
          if((gasLimit.length() == 0) || (gasLimit.equals("0")))
          {
-            gasLimit = "10100";
+            gasLimit = "15555";
          }
       }
 
       if(storageLimit == null)
       {
-         storageLimit = "277";
+         storageLimit = "489";
       }
       else
       {
          if(storageLimit.length() == 0)
          {
-            storageLimit = "277";
+            storageLimit = "489";
          }
       }
 
@@ -798,10 +913,15 @@ public class TezosGateway
       transaction.put("counter", String.valueOf(counter + 1));
       transaction.put("gas_limit", gasLimit);
       transaction.put("storage_limit", storageLimit);
-      transaction.put("manager_pubkey", from);
       transaction.put("balance", (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
       transaction.put("spendable", spendable);
-      transaction.put("delegatable", delegatable);
+
+         JSONObject jsonScript = new JSONObject();
+            jsonScript.put("code", code );
+            jsonScript.put("storage", storage );
+      
+      transaction.put("script", jsonScript);
+               
       operations.put(transaction);
 
       result = (JSONObject) sendOperation(operations, encKeys);
@@ -975,8 +1095,11 @@ public class TezosGateway
             if(currentBlockNumber == 0)
             {
                // Sets the initial block number.
-               currentBlockNumber = (Integer) response.get("level");
-
+               if (response.has("level"))
+               {
+                  currentBlockNumber = (Integer) response.get("level");
+               }
+               
                // Sets the ending block number.
                LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
             }
@@ -986,7 +1109,7 @@ public class TezosGateway
             String blockHash = "";
 
             // Wait until current block has a hash.
-            while (foundBlockHash == false)
+            while ((foundBlockHash == false)&&(currentBlockNumber>0))
             {
                // Extract block information from current block number.
                response = (JSONObject) query("/chains/main/blocks/" + currentBlockNumber, null);
@@ -1086,7 +1209,7 @@ public class TezosGateway
    // Calls a contract passing parameters.
    public JSONObject callContractEntryPoint(String from, String contract, BigDecimal amount, BigDecimal fee,
                                             String gasLimit, String storageLimit, EncKeys encKeys, String entrypoint,
-                                            String[] parameters)
+                                            String[] parameters, Boolean rawParameter)
          throws Exception
    {
       JSONObject result = new JSONObject();
@@ -1166,22 +1289,37 @@ public class TezosGateway
       transaction.put("source", from);
       transaction.put("kind", OPERATION_KIND_TRANSACTION);
 
-      // Builds a Michelson-compatible set of parameters to pass to the smart
-      // contract.
-      JSONObject myparamJson = new JSONObject();
+      
+      JSONObject myParams = null;
+      if (rawParameter == false)
+      {
+         // Builds a Michelson-compatible set of parameters to pass to the smart
+         // contract.
+   
+         JSONObject myparamJson = new JSONObject();
+         
+         String[] contractEntryPoints = getContractEntryPoints(contract);
+         String[] contractEntryPointParameters = getContractEntryPointsParameters(contract, entrypoint, "names");
+         String[] contractEntryPointParametersTypes = getContractEntryPointsParameters(contract, entrypoint, "types");
+   
+         myparamJson = paramValueBuilder(entrypoint, contractEntryPoints, parameters, contractEntryPointParameters,
+               contractEntryPointParametersTypes);
 
-      String[] contractEntryPoints = getContractEntryPoints(contract);
-      String[] contractEntryPointParameters = getContractEntryPointsParameters(contract, entrypoint, "names");
-      String[] contractEntryPointParametersTypes = getContractEntryPointsParameters(contract, entrypoint, "types");
+         // Adds the smart contract parameters to the transaction.
+         myParams = new JSONObject();
+         myParams.put("entrypoint", "default");
+         myParams.put("value", myparamJson);
 
-      myparamJson = paramValueBuilder(entrypoint, contractEntryPoints, parameters, contractEntryPointParameters,
-            contractEntryPointParametersTypes);
-
-      // Adds the smart contract parameters to the transaction.
-      JSONObject myParams = new JSONObject();
-      myParams.put("entrypoint", "default");
-      myParams.put("value", myparamJson);
-
+      }
+      else
+      {
+         // Adds the smart contract parameters to the transaction.
+         myParams = new JSONObject();
+         myParams.put("entrypoint", entrypoint);
+         JSONArray myJsonArray = new JSONArray(parameters[0]);         
+         myParams.put("value", myJsonArray);
+      }
+         
       transaction.put("parameters", myParams);
 
       operations.put(transaction);
@@ -1191,6 +1329,7 @@ public class TezosGateway
       return result;
    }
 
+   
    private JSONObject paramValueBuilder(String entrypoint, String[] contractEntrypoints, String[] parameters,
                                         String[] contractEntryPointParameters, String[] datatypes)
    {
@@ -1211,8 +1350,11 @@ public class TezosGateway
          switch (typesList.get(i))
          {
             case "int":
-                typesList.set(i, "int");
-                break;
+               typesList.set(i, "int");
+               break;
+            case "string":
+               typesList.set(i, "string");
+               break;
             case "nat":
                typesList.set(i, "int");
                break;
@@ -1229,7 +1371,7 @@ public class TezosGateway
                typesList.set(i, "string");
                break;
             case "bool":
-               typesList.set(i, "string");
+               typesList.set(i, "prim");
                break;
             case "unit":
                typesList.set(i, "string");
@@ -1243,7 +1385,7 @@ public class TezosGateway
       }
 
       // Builds the parameters pairs and formats them as JSON.
-      myJsonObj = buildParameterPairs(myJsonObj, basePair, parametersList, typesList, 0);
+      myJsonObj = buildParameterPairs(myJsonObj, basePair, parametersList, typesList, 0, contractEntryPointParameters);
 
       // Builds the Micheline formatted JSON. Only if an entrypoint was specified.
       if(entrypoint != null)
@@ -1259,7 +1401,7 @@ public class TezosGateway
    }
 
    private JSONObject buildParameterPairs(JSONObject jsonObj, Pair pair, List<String> parameters,
-                                          List<String> datatypes, Integer firstElement)
+                                          List<String> datatypes, Integer firstElement, String[] contractEntryPointParameters )
    {
 
       if(parameters.size() == 1)
@@ -1309,7 +1451,7 @@ public class TezosGateway
 
                   newJsonObj.put("args", jsonArray);
 
-                  return buildParameterPairs(newJsonObj, pair, parameters, datatypes, i + 1);
+                  return buildParameterPairs(newJsonObj, pair, parameters, datatypes, i + 1, contractEntryPointParameters);
 
                }
             }
@@ -1482,4 +1624,498 @@ public class TezosGateway
       return builtArray;
    }
 
+   public ArrayList<Map> getContractStorage(String contractAddress) throws Exception
+   {
+
+      ArrayList<Map> items = new ArrayList<Map>();
+      /*
+       * JSONObject response = (JSONObject) query(
+       * "/chains/main/blocks/head/context/contracts/" + contractAddress +
+       * "/storage/", null);
+       * 
+       * JSONArray storageArray = decodeMichelineParameters(response, null);
+       * 
+       * JSONObject jsonObj = new JSONObject();
+       * 
+       * for(int i = 0; i < storageArray.length(); i++) { jsonObj = (JSONObject)
+       * storageArray.get(i); Map<String, Object> map = new HashMap<String, Object>();
+       * map = toMap(jsonObj); items.add(map); }
+       */
+      return items;
+   }
+
+   public static Map<String, Object> toMap(JSONObject object) throws JSONException
+   {
+      Map<String, Object> map = new HashMap<String, Object>();
+
+      Iterator<String> keysItr = object.keys();
+      while (keysItr.hasNext())
+      {
+         String key = keysItr.next();
+         Object value = object.get(key);
+
+         if(value instanceof JSONArray)
+         {
+            value = toList((JSONArray) value);
+         }
+
+         else if(value instanceof JSONObject)
+         {
+            value = toMap((JSONObject) value);
+         }
+         map.put(key, value);
+      }
+      return map;
+   }
+
+   public static List<Object> toList(JSONArray array) throws JSONException
+   {
+      List<Object> list = new ArrayList<Object>();
+      for(int i = 0; i < array.length(); i++)
+      {
+         Object value = array.get(i);
+         if(value instanceof JSONArray)
+         {
+            value = toList((JSONArray) value);
+         }
+
+         else if(value instanceof JSONObject)
+         {
+            value = toMap((JSONObject) value);
+         }
+         list.add(value);
+      }
+      return list;
+   }
+
+   public Boolean waitForAndCheckResult(String operationHash, Integer numberOfBlocksToWait) throws Exception
+   {
+      Integer currentBlockNumber = 0;
+      Integer LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
+      JSONObject response = null;
+      Boolean foundBlockHash = false;
+      String result = "";
+
+      try
+      {
+
+         while ((result.equals("")) && (currentBlockNumber < LimitBlockNumber))
+         {
+
+            // Get blockchain header.
+            response = (JSONObject) query("/chains/main/blocks/head/header", null);
+
+            // Acquaire current blockchain block (level) if it is zero yet.
+            if(currentBlockNumber == 0)
+            {
+               // Sets the initial block number.
+               if (response.has("level"))
+               {
+                  currentBlockNumber = (Integer) response.get("level");
+               }
+
+               // Sets the ending block number.
+               LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
+            }
+            
+            // Reset control variables.
+            foundBlockHash = false;
+            String blockHash = "";
+
+            // Wait until current block has a hash.
+            while ((foundBlockHash == false)&&(currentBlockNumber>0))
+            {
+               // Extract block information from current block number.
+               response = (JSONObject) query("/chains/main/blocks/" + currentBlockNumber, null);
+
+               // Check if block has a hash.
+               if(response.has("hash"))
+               {
+                  // Block hash has been found!
+                  foundBlockHash = true;
+
+                  // Get the block hash information.
+                  blockHash = (String) response.get("hash");
+
+                  // Increment the current block number;
+                  currentBlockNumber++;
+
+                  // Get the block operations using the block hash.
+                  response = (JSONObject) query("/chains/main/blocks/" + blockHash + "/operations/3", null);
+
+                  // Check result to see if desired operation hash is already included in a block.
+                  result = checkOperationResult(response, operationHash);
+
+                  
+                  
+               }
+
+               // If operation hash has not been found yet, give blockchain some time until
+               // next fetch.
+               if(result.equals(""))
+               {
+                  // Wait 5 seconds to query blockchain again.
+                  TimeUnit.SECONDS.sleep(5);
+               }
+            }
+
+         }
+
+      } catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+
+      return result.equals("true") ? true : false;
+
+   }
+
+   public String checkOperationResult(JSONObject blockRead, String operationHash)
+   {
+      String result = "";
+      String hash = "";
+      String opHash = "";
+
+      // Do some cleaning.
+      opHash = operationHash.replace("\"", "");
+      opHash = opHash.replace("\n", "");
+      opHash = opHash.trim();
+
+      // Define object we will need inside the loop.
+      JSONObject myObject = new JSONObject();
+
+      try
+      {
+         // Extract the array from the JSONObject "result".
+         JSONArray myArray = (JSONArray) blockRead.get("result");
+
+         // Loop through each element of the array.
+         for(Integer i = 0; i < myArray.length(); i++)
+         {
+            // Get current element of the array.
+            myObject = ((JSONObject) ((JSONArray) blockRead.get("result")).get(i));
+
+            // What interests us is the element "hash".
+            hash = myObject.get("hash").toString();
+
+            // Do some cleaning.
+            hash = hash.replace("\"", "");
+            hash = hash.replace("\n", "");
+            hash = hash.trim();
+
+            // Check if the operation hash we've got from the block is the same we are
+            // searching.
+            if(hash.equals(opHash))
+            {
+               
+               // We've found the hash included in this block. Now let's extract the operation
+               // result: applied or failed.
+               
+               JSONArray contentsArray = ((JSONArray) myObject.get("contents"));
+
+               for(int w=0;w<contentsArray.length();w++)
+               {
+                  JSONObject opRes = (JSONObject) ((JSONObject)((JSONObject)contentsArray.get(w)).get("metadata")).get("operation_result"); 
+                  
+                  if(opRes.get("status").equals("failed"))
+                  {
+                     result = "false";
+                     break;                     
+                  }
+                  else if(opRes.get("status").equals("applied"))
+                  {
+                     result = "true";                    
+                  }
+               
+                  if(opRes.has("errors"))
+                  {
+                     result = "false";
+                     break;
+                  }
+               }
+            
+               if(result.equals("false") == true)
+               {
+                  break;
+               }
+               
+            }
+
+         }
+         
+      }
+      catch (Exception f)
+      {
+         result = "false";
+      }
+
+      return result;
+
+   }
+
+   public JSONObject waitForAndCheckResultByDestinationAddress(String address, Integer numberOfBlocksToWait) throws Exception
+   {
+      Integer currentBlockNumber = 0;
+      Integer LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
+      JSONObject response = null;
+      Boolean foundBlockHash = false;
+      JSONObject result = null;
+
+      try
+      {
+
+         while ((result == null)  && (currentBlockNumber < LimitBlockNumber))
+         {
+
+            // Get blockchain header.
+            response = (JSONObject) query("/chains/main/blocks/head/header", null);
+
+            // Acquaire current blockchain block (level) if it is zero yet.
+            if(currentBlockNumber == 0)
+            {
+               // Sets the initial block number.
+               if (response.has("level"))
+               {
+                  currentBlockNumber = (Integer) response.get("level");
+               }
+
+               // Sets the ending block number.
+               LimitBlockNumber = currentBlockNumber + numberOfBlocksToWait;
+            }
+            
+            // Reset control variables.
+            foundBlockHash = false;
+            String blockHash = "";
+
+            // Wait until current block has a hash.
+            while ((foundBlockHash == false)&&(currentBlockNumber>0)&&(result == null))
+            {
+               // Extract block information from current block number.
+               response = (JSONObject) query("/chains/main/blocks/" + currentBlockNumber, null);
+
+               // Check if block has a hash.
+               if(response.has("hash"))
+               {
+                  // Block hash has been found!
+                  foundBlockHash = true;
+
+                  // Get the block hash information.
+                  blockHash = (String) response.get("hash");
+
+                  // Increment the current block number;
+                  currentBlockNumber++;
+
+                  // Get the block operations using the block hash.
+                  response = (JSONObject) query("/chains/main/blocks/" + blockHash + "/operations/3", null);
+
+                  // Check result to see if desired operation hash is already included in a block.
+                  result = checkOperationResultByAddress(response, address);
+                  
+               }
+
+               // If operation hash has not been found yet, give blockchain some time until
+               // next fetch.
+               if(result == null)
+               {
+                  // Wait 5 seconds to query blockchain again.
+                  TimeUnit.SECONDS.sleep(5);
+               }
+            }
+
+         }
+
+      } catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+
+      return result;
+
+   }
+
+   public JSONObject checkOperationResultByAddress(JSONObject blockRead, String address)
+   {
+      JSONObject result = null;
+      String myAddress = "";
+
+      // Do some cleaning.
+      myAddress = address.replace("\"", "");
+      myAddress = myAddress.replace("\n", "");
+      myAddress = myAddress.trim();
+
+      // Define object we will need inside the loop.
+      JSONObject myObject = new JSONObject();
+
+      try
+      {
+         // Extract the array from the JSONObject "result".
+         JSONArray myArray = (JSONArray) blockRead.get("result");
+
+         // Loop through each element of the array.
+         for(Integer i = 0; i < myArray.length(); i++)
+         {
+            // Get current element of the array.
+            myObject = ((JSONObject) ((JSONArray) blockRead.get("result")).get(i));
+
+            // What interests us is the element "contents".
+            JSONArray contentsArray = ((JSONArray)myObject.get("contents"));
+          
+            for(int w=0;w<contentsArray.length();w++)
+            {
+               JSONObject jsonObj = (JSONObject)contentsArray.get(w); 
+                              
+               if(jsonObj.has("destination"))
+               {
+                  if(jsonObj.get("destination").equals(address) == true)
+                  {
+                     
+                     JSONObject opRes = (JSONObject) ((JSONObject)jsonObj.get("metadata")).get("operation_result"); 
+                     
+                     if(opRes.get("status").equals("failed"))
+                     {
+                        result = null;
+                        break;                     
+                     }
+                     else if(opRes.get("status").equals("applied"))
+                     {
+                        result = new JSONObject();
+                        result.put("amount", jsonObj.get("amount"));
+                        result.put("address", jsonObj.get("source"));
+                        result.put("hash", myObject.get("hash"));
+                        break;
+                     }
+                     
+                     if(opRes.has("errors"))
+                     {
+                        result = null;
+                        break;
+                     }
+                  }
+               
+                  if(result != null)
+                  {
+                     break;
+                  }
+                   
+               }
+            }
+
+         }
+         
+      }
+      catch (Exception f)
+      {
+         result = null;
+      }
+
+      return result;
+
+   }
+
+   
+   // Sends a transfer from KT to TZ operation to the Tezos node.
+   public JSONObject transferImplicit(String contract, String implicitAddress, String managerAddress, BigDecimal amount, EncKeys encKeys)
+         throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      BigDecimal fee = new BigDecimal(Global.KT_TO_TZ_FEE);
+      BigDecimal roundedAmount = amount.setScale(6, BigDecimal.ROUND_HALF_UP);
+      BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
+      String gasLimit = Global.KT_TO_TZ_GAS_LIMIT;
+      String storageLimit = Global.KT_TO_TZ_STORAGE_LIMIT;
+      
+      String mutez = (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger()));
+      String michelson = "[{ \"prim\": \"DROP\" },"
+                       + "{ \"prim\": \"NIL\", \"args\": [{ \"prim\": \"operation\" }] },"
+                       + "{"
+                       + "\"prim\": \"PUSH\","
+                       + "\"args\":"
+                       + "[{ \"prim\": \"key_hash\" },"
+                       + "{ \"string\": \"" + implicitAddress + "\"  }]"
+                       + "},"
+                       + "{ \"prim\": \"IMPLICIT_ACCOUNT\" },"
+                       + "{"
+                       + "\"prim\": \"PUSH\","
+                       + "\"args\": [{ \"prim\": \"mutez\" }, { \"int\": \"" + mutez + "\" }]"
+                       + "},"
+                       + "{ \"prim\": \"UNIT\" }, { \"prim\": \"TRANSFER_TOKENS\" },"
+                       + "{ \"prim\": \"CONS\" }]";
+
+      result = callContractEntryPoint(managerAddress, contract, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys, "do", new String[] { michelson }, true );
+      
+      return result;
+      
+   }
+
+   // Sends a transfer from KT to KT operation to the Tezos node.
+   public JSONObject transferToContract(String contract, String destinationKT, String managerAddress, BigDecimal amount, EncKeys encKeys)
+         throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      BigDecimal fee = new BigDecimal(Global.KT_TO_KT_FEE);
+      BigDecimal roundedAmount = amount.setScale(6, BigDecimal.ROUND_HALF_UP);
+      BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
+      String gasLimit = Global.KT_TO_KT_GAS_LIMIT;
+      String storageLimit = Global.KT_TO_KT_STORAGE_LIMIT;
+      
+      String mutez = (String.valueOf(roundedAmount.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger()));
+      String michelson = "[{ \"prim\": \"DROP\" },"
+                       + "{ \"prim\": \"NIL\", \"args\": [{ \"prim\": \"operation\" }] },"
+                       + "{"
+                       + "\"prim\": \"PUSH\","
+                       + "\"args\":"
+                       + "[{ \"prim\": \"address\" },"
+                       + "{ \"string\": \"" + destinationKT + "\" }]"
+                       + "},"
+                       + "{ \"prim\": \"CONTRACT\", \"args\": [{ \"prim\": \"unit\" }] },"
+                       + "[{"
+                       + "\"prim\": \"IF_NONE\","
+                       + "\"args\":"
+                       + "[[[{ \"prim\": \"UNIT\" }, { \"prim\": \"FAILWITH\" }]],"
+                       + "[]]"
+                       + "}],"
+                       + "{"
+                       + "\"prim\": \"PUSH\","
+                       + "\"args\": [{ \"prim\": \"mutez\" }, { \"int\": \"" + mutez + "\"  }]"
+                       + "},"
+                       + "{ \"prim\": \"UNIT\" }, { \"prim\": \"TRANSFER_TOKENS\" },"
+                       + "{ \"prim\": \"CONS\" }]";
+
+
+      result = callContractEntryPoint(managerAddress, contract, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys,"do", new String[] { michelson }, true);
+
+      return result;
+      
+   }
+
+   // Delegate from KT.
+   public JSONObject sendDelegationFromContract(String delegator, String delegate, String managerAddress, EncKeys encKeys) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      BigDecimal fee = new BigDecimal(Global.KT_TO_TZ_FEE);
+      BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
+      String gasLimit = Global.KT_TO_TZ_GAS_LIMIT;
+      String storageLimit = Global.KT_TO_TZ_STORAGE_LIMIT;
+      
+      String michelson = "[{ \"prim\": \"DROP\" },"
+                       + "{ \"prim\": \"NIL\", args: [{ \"prim\": \"operation\" }] },"
+                       + "{"
+                       + "  \"prim\": \"PUSH\","
+                       + "  args: [{ \"prim\": \"key_hash\" }, { \"string\": \"" + delegate + "\" }],"
+                       + "},"
+                       + "{ \"prim\": \"SOME\" },"
+                       + "{ \"prim\": \"SET_DELEGATE\" },"
+                       + "{ \"prim\": \"CONS\" }]";
+
+      result = callContractEntryPoint(managerAddress, delegator, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys, "do", new String[] { michelson }, true );
+      
+      return result;
+      
+   }
+
+   
+   
 }

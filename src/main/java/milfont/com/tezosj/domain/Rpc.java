@@ -3,6 +3,7 @@ package milfont.com.tezosj.domain;
 import org.json.JSONObject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Map;
 
 import milfont.com.tezosj.data.TezosGateway;
 import milfont.com.tezosj.model.BatchTransactionItem;
@@ -179,14 +180,14 @@ public class Rpc
 
    public JSONObject callContractEntryPoint(String from, String contract, BigDecimal amount, BigDecimal fee,
                                             String gasLimit, String storageLimit, EncKeys encKeys, String entrypoint,
-                                            String[] parameters)
+                                            String[] parameters, Boolean rawParameter)
    {
       JSONObject result = new JSONObject();
 
       try
       {
          result = (JSONObject) tezosGateway.callContractEntryPoint(from, contract, amount, fee, gasLimit, storageLimit,
-               encKeys, entrypoint, parameters);
+               encKeys, entrypoint, parameters, rawParameter);
       } catch (Exception e)
       {
          e.printStackTrace();
@@ -198,4 +199,110 @@ public class Rpc
 
    }
 
+   public ArrayList<Map> getContractStorage(String contractAddress) throws Exception
+   {
+      ArrayList<Map> items = new ArrayList<Map>();
+
+      items = (ArrayList<Map>) tezosGateway.getContractStorage(contractAddress);
+
+      return items;
+   }
+
+   public Boolean waitForAndCheckResult(String operationHash, Integer numberOfBlocksToWait)
+   {
+      Boolean result = false;
+
+      try
+      {
+         result = (Boolean) tezosGateway.waitForAndCheckResult(operationHash, numberOfBlocksToWait);
+      } catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to check operation results. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+
+   public JSONObject waitForAndCheckResultByDestinationAddress(String address, Integer numberOfBlocksToWait)
+   {
+      JSONObject result = null;
+
+      try
+      {
+         result = tezosGateway.waitForAndCheckResultByDestinationAddress(address, numberOfBlocksToWait);
+      } 
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to check operation results. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+   
+   
+   public JSONObject transferImplicit(String contract, String implicitAddress, String managerAddress, BigDecimal amount, EncKeys encKeys)
+   {
+      JSONObject result = new JSONObject();
+
+      try
+      {
+         result = (JSONObject) tezosGateway.transferImplicit(contract, implicitAddress, managerAddress, amount, encKeys);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to perform a transfer implicit operation. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+
+   public JSONObject transferToContract(String contract, String destinationKT, String managerAddress, BigDecimal amount, EncKeys encKeys)
+   {
+      JSONObject result = new JSONObject();
+
+      try
+      {
+         result = (JSONObject) tezosGateway.transferToContract(contract, destinationKT, managerAddress, amount, encKeys);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to perform a transfer to contract operation. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+
+   public JSONObject sendDelegationFromContract(String delegator, String delegate, String managerAddress, EncKeys encKeys) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      try
+      {
+         result = (JSONObject) tezosGateway.sendDelegationFromContract(delegator, delegate, managerAddress, encKeys);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to perform a delegation operation. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+  
+   
+   
 }

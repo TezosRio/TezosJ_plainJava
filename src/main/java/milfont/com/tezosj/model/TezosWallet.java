@@ -1,23 +1,20 @@
 package milfont.com.tezosj.model;
 
 import org.bitcoinj.crypto.MnemonicCode;
-import org.json.JSONObject;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-
 import java.security.KeyStore;
 import java.security.KeyStore.SecretKeyEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
-import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -34,7 +31,9 @@ import milfont.com.tezosj.helper.Sha256Hash;
 import static milfont.com.tezosj.helper.Constants.TEZOS_SYMBOL;
 import static milfont.com.tezosj.helper.Constants.TZJ_KEY_ALIAS;
 import static milfont.com.tezosj.helper.Constants.UTEZ;
+import static milfont.com.tezosj.helper.Encoder.HEX;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
+import org.json.JSONObject;
 
 /**
  * Created by Milfont on 21/07/2018.
@@ -185,6 +184,21 @@ public class TezosWallet
 
    }
 
+   // Constructor for previously created wallet from saved encoded byte array.
+   // This will load an existing wallet from an encoded byte array.
+   public TezosWallet(byte[] encData, byte[] p)
+   {
+      // Creates a unique copy and initializes libsodium native library.
+      Random rand = new Random();
+      int n = rand.nextInt(1000000) + 1;
+      this.myRandomID = n;
+      this.sodium = new MySodium(String.valueOf(n));
+
+      loadFromBytes(encData, p);
+      
+   }
+
+   
    // v1.0.0
    public TezosWallet(String privateKey, String publicKey, String publicKeyHash, String passPhrase) throws Exception
    {
@@ -237,6 +251,77 @@ public class TezosWallet
    }
    // v1.0.0
 
+   public TezosWallet(String[] publicKey) throws Exception
+   {
+      resetWallet();
+      this.alias = "";
+      this.mnemonicWords = null;
+
+      // Creates a unique copy and initializes libsodium native library.
+      Random rand = new Random();
+      int n = rand.nextInt(1000000) + 1;
+      this.myRandomID = n;
+      this.sodium = new MySodium(String.valueOf(n));
+
+      // Converts passPhrase String to a byte array, respecting char values.
+      String passPhrase = "";
+      byte[] z = new byte[passPhrase.length()];
+      for(int i = 0; i < passPhrase.length(); i++)
+      {
+         z[i] = (byte) passPhrase.charAt(i);
+      }
+
+      initStore(z);
+      initDomainClasses();
+
+      //---------------
+      
+      // These are our prefixes.
+      byte[] edpkPrefix =
+      { (byte) 13, (byte) 15, (byte) 37, (byte) 217 };
+      byte[] edskPrefix =
+      { (byte) 43, (byte) 246, (byte) 78, (byte) 7 };
+      byte[] tz1Prefix =
+      { (byte) 6, (byte) 161, (byte) 159 };
+      
+      // Converts publicKey String to a byte array, respecting char values.
+      byte[] d = new byte[publicKey[0].length()];
+      for(int i = 0; i < publicKey[0].length(); i++)
+      {
+         d[i] = (byte) publicKey[0].charAt(i);
+      }
+      
+      // Creates Tezos Public Key.
+      byte[] prefixedPubKey = new byte[36];
+      System.arraycopy(edpkPrefix, 0, prefixedPubKey, 0, 4);
+      System.arraycopy(d, 0, prefixedPubKey, 4, 32);
+
+      byte[] firstFourOfDoubleChecksum = Sha256Hash.hashTwiceThenFirstFourOnly(prefixedPubKey);
+      byte[] prefixedPubKeyWithChecksum = new byte[40];
+      System.arraycopy(prefixedPubKey, 0, prefixedPubKeyWithChecksum, 0, 36);
+      System.arraycopy(firstFourOfDoubleChecksum, 0, prefixedPubKeyWithChecksum, 36, 4);
+
+      // Encrypts and stores Public Key into wallet's class property.
+      this.publicKey = encryptBytes(Base58.encode(prefixedPubKeyWithChecksum).getBytes(), getEncryptionKey());
+
+      //---------------
+      
+      
+      
+  
+      String publicKeyHash = getPublicKeyHash(publicKey[0]);
+      // Converts publicKeyHash String to a byte array, respecting char values.
+      byte[] e = new byte[publicKeyHash.length()];
+      for(int i = 0; i < publicKeyHash.length(); i++)
+      {
+         e[i] = (byte) publicKeyHash.charAt(i);
+      }
+      
+      this.publicKeyHash = encryptBytes(e, getEncryptionKey());
+      
+   }
+
+   
    private void initDomainClasses()
    {
       this.rpc = new Rpc();
@@ -752,6 +837,21 @@ public class TezosWallet
       }
    }
 
+   public byte[] saveToBytes()
+   {
+
+      String myWalletData = Base64.getEncoder().encodeToString(this.alias.getBytes() != null ? this.alias.getBytes() : " ".getBytes()) + ";"
+            + Base64.getEncoder().encodeToString(this.publicKey != null ? this.publicKey : " ".getBytes()  ) + ";"
+            + Base64.getEncoder().encodeToString(this.publicKeyHash != null ? this.publicKeyHash : " ".getBytes()) + ";"
+            + Base64.getEncoder().encodeToString(this.privateKey != null ? this.privateKey : " ".getBytes() ) + ";"
+            + Base64.getEncoder().encodeToString(this.balance.getBytes() != null ? this.balance.getBytes() : " ".getBytes() ) + ";"
+            + Base64.getEncoder().encodeToString(this.mnemonicWords != null ? this.mnemonicWords : " ".getBytes() ) + ";";
+   
+      return myWalletData.getBytes();
+   
+   }
+
+   
    public void load(String pathToFile, String p)
    {
       // Loads a wallet from media to memory.
@@ -818,6 +918,35 @@ public class TezosWallet
       {
          throw new java.lang.RuntimeException("A filename and path are required to load a wallet.");
       }
+   }
+
+   public void loadFromBytes(byte[] encData, byte[] p)
+   {
+      try
+      {
+         
+         // Convert bytes back to string.
+         StringBuilder builder = new StringBuilder();
+         for(byte anInput : encData)
+         {
+            builder.append((char) (anInput));
+         }
+       
+         resetWallet();
+     
+         String[] fields = builder.toString().split("\\;", -1);
+         this.alias = new String(Base64.getDecoder().decode(fields[0]), "UTF-8");
+         this.publicKey = Base64.getDecoder().decode(fields[1]);
+         this.publicKeyHash = Base64.getDecoder().decode(fields[2]);
+         this.privateKey = Base64.getDecoder().decode(fields[3]);
+         this.balance = new String(Base64.getDecoder().decode(fields[4]), "UTF-8");
+         this.mnemonicWords = Base64.getDecoder().decode(fields[5]);
+              
+         initStore(p);
+         initDomainClasses();
+         }
+         catch(Exception e)
+         {}     
    }
 
    private String buildStringFromByte(byte[] input)
@@ -933,6 +1062,36 @@ public class TezosWallet
       Global.defaultProvider = provider;
    }
 
+   public void setLedgerDerivationPath(String derivationPath)
+   {
+      Global.ledgerDerivationPath = derivationPath;
+   }
+
+   public void setLedgerTezosFolderPath(String ledgerTezosFolderPath)
+   {
+      Global.ledgerTezosFolderPath = ledgerTezosFolderPath;
+   }
+
+   public void setLedgerTezosFilePath(String ledgerTezosFilePath)
+   {
+      Global.ledgerTezosFilePath = ledgerTezosFilePath;
+   }
+
+   public void setKTtoTZFee(String strBigDecimalFee)
+   {
+      Global.KT_TO_TZ_FEE = strBigDecimalFee;
+   }
+
+   public void setKTtoTZGasLimit(String gasLimit)
+   {
+      Global.KT_TO_TZ_GAS_LIMIT = gasLimit;
+   }
+
+   public void setKTtoTZStorageLimit(String storageLimit)
+   {
+      Global.KT_TO_TZ_STORAGE_LIMIT = storageLimit;
+   }
+   
    // v0.9.9
 
    // Delegate to.
@@ -1208,7 +1367,7 @@ public class TezosWallet
    // Returns to the user the operation results from Tezos node.
    public JSONObject callContractEntryPoint(String from, String contract, BigDecimal amount, BigDecimal fee,
                                             String gasLimit, String storageLimit, String entrypoint,
-                                            String[] parameters)
+                                            String[] parameters, Boolean rawParameter)
          throws Exception
    {
       JSONObject result = new JSONObject();
@@ -1234,7 +1393,7 @@ public class TezosWallet
                         encKeys.setEncP(this.encPass);
 
                         result = rpc.callContractEntryPoint(from, contract, amount, fee, gasLimit, storageLimit,
-                              encKeys, entrypoint, parameters);
+                              encKeys, entrypoint, parameters, rawParameter);
                      }
                      else
                      {
@@ -1272,4 +1431,300 @@ public class TezosWallet
 
    }
 
+   public ArrayList<Map> getContractStorage(String contractAddress) throws Exception
+   {
+      ArrayList<Map> items = new ArrayList<Map>();
+
+      items = (ArrayList<Map>) rpc.getContractStorage(contractAddress);
+
+      return items;
+   }
+
+   public JSONObject waitForAndCheckResultByDestinationAddress(String address, Integer numberOfBlocksToWait) throws Exception
+   {
+      return rpc.waitForAndCheckResultByDestinationAddress(address, numberOfBlocksToWait);
+   }
+
+   public Boolean waitForAndCheckResult(String operationHash, Integer numberOfBlocksToWait) throws Exception
+   {
+      return rpc.waitForAndCheckResult(operationHash, numberOfBlocksToWait);
+   }
+
+   // Retrieves the Public Key Hash (Tezos user address) upon user request, given a public key.
+   public String getPublicKeyHash(String publicKey)
+   {
+      if(publicKey != null)
+      {
+         if(publicKey.length() > 0)
+         {
+             // These are our prefixes.
+             byte[] edpkPrefix =
+             { (byte) 13, (byte) 15, (byte) 37, (byte) 217 };
+             byte[] edskPrefix =
+             { (byte) 43, (byte) 246, (byte) 78, (byte) 7 };
+             byte[] tz1Prefix =
+             { (byte) 6, (byte) 161, (byte) 159 };
+
+             
+             byte[] sodiumPublicKey = zeros(32);
+     	       sodiumPublicKey = HEX.decode(publicKey);   	      
+             
+             // Creates Tezos Public Key.
+             byte[] prefixedPubKey = new byte[36];
+             System.arraycopy(edpkPrefix, 0, prefixedPubKey, 0, 4);
+             System.arraycopy(sodiumPublicKey, 0, prefixedPubKey, 4, 32);
+             
+             byte[] firstFourOfDoubleChecksum = Sha256Hash.hashTwiceThenFirstFourOnly(prefixedPubKey);
+             byte[] prefixedPubKeyWithChecksum = new byte[40];
+             System.arraycopy(prefixedPubKey, 0, prefixedPubKeyWithChecksum, 0, 36);
+             System.arraycopy(firstFourOfDoubleChecksum, 0, prefixedPubKeyWithChecksum, 36, 4);
+ 
+             // Encrypts and stores Public Key into wallet's class property.
+             this.publicKey = encryptBytes(Base58.encode(prefixedPubKeyWithChecksum).getBytes(), getEncryptionKey());
+             
+             // Creates Tezos Public Key Hash (Tezos address).
+             byte[] genericHash = new byte[20];
+             int s = sodium.crypto_generichash(genericHash, genericHash.length, sodiumPublicKey, sodiumPublicKey.length,
+                   sodiumPublicKey, 0);
+
+             byte[] prefixedGenericHash = new byte[23];
+             System.arraycopy(tz1Prefix, 0, prefixedGenericHash, 0, 3);
+             System.arraycopy(genericHash, 0, prefixedGenericHash, 3, 20);
+
+             firstFourOfDoubleChecksum = Sha256Hash.hashTwiceThenFirstFourOnly(prefixedGenericHash);
+             byte[] prefixedPKhashWithChecksum = new byte[27];
+             System.arraycopy(prefixedGenericHash, 0, prefixedPKhashWithChecksum, 0, 23);
+             System.arraycopy(firstFourOfDoubleChecksum, 0, prefixedPKhashWithChecksum, 23, 4);
+
+             String pkHash = Base58.encode(prefixedPKhashWithChecksum);
+        	     
+             // Encrypts and stores Public Key Hash into wallet's class property.
+             this.publicKeyHash = encryptBytes(Base58.encode(prefixedPKhashWithChecksum).getBytes(), getEncryptionKey());
+             
+             return pkHash;
+         }
+         else
+         {
+            throw new java.lang.RuntimeException("publicKey argument is mandatory.");
+         }
+      }
+      else
+      {
+         throw new java.lang.RuntimeException("publicKey argument is mandatory");
+      }
+
+   }
+
+   public Boolean hasPrivateKey()
+   {
+      return ( this.privateKey == null ? false : true);
+   }
+
+   public JSONObject transferImplicit(String contract, String implicitAddress, String managerAddress, BigDecimal amount) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      if((contract != null) && (implicitAddress != null) && (managerAddress != null) && (amount != null))
+      {
+         if(contract.length() > 0)
+         {
+            if(implicitAddress.length() > 0)
+            {
+               if(managerAddress.length() > 0)
+               {
+
+                  if((this.crypto.checkAddress(contract) == true) && (this.crypto.checkAddress(implicitAddress) == true) && (this.crypto.checkAddress(managerAddress) == true))
+                  {
+                     if((contract.substring(0, 2).toLowerCase().equals("kt") == true) && (implicitAddress.substring(0, 2).toLowerCase().equals("tz") == true) && (managerAddress.substring(0, 2).toLowerCase().equals("tz") == true))
+                     {   
+                        if(amount.compareTo(BigDecimal.ZERO) > 0)
+                        {
+                           // Prepares keys.
+                           EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash,
+                                 this.myRandomID);
+                           encKeys.setEncIv(this.encIv);
+                           encKeys.setEncP(this.encPass);
+      
+                           result = rpc.transferImplicit(contract, implicitAddress, managerAddress, amount, encKeys);
+      
+                        }
+                        else
+                        {
+                           throw new java.lang.RuntimeException("Amount must be greater than zero.");
+                        }
+                     }
+                     else
+                     {
+                        throw new java.lang.RuntimeException("From address must be KT, To address must be TZ and Manager address must be TZ.");
+                     }
+                     
+                  }
+                  else
+                  {
+                     throw new java.lang.RuntimeException("Valid Tezos addresses are required in From, To and Manager fields.");
+                  }
+
+               }
+               else
+               {
+                  throw new java.lang.RuntimeException("Manager address is mandatory.");
+               }
+
+            }
+            else
+            {
+               throw new java.lang.RuntimeException("Recipient (To field) is mandatory.");
+            }
+            
+         }
+         else
+         {
+            throw new java.lang.RuntimeException("Sender (From field) is mandatory.");
+         }
+
+      }
+      else
+      {
+         throw new java.lang.RuntimeException("The fields: From, To, Manager and Amount are required.");
+      }
+
+      return result;
+
+   }
+
+   public JSONObject transferToContract(String contract, String destinationKT, String managerAddress, BigDecimal amount) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      if((contract != null) && (destinationKT != null)  && (managerAddress != null) && (amount != null))
+      {
+         if(contract.length() > 0)
+         {
+            if(destinationKT.length() > 0)
+            {
+               if(managerAddress.length() > 0)
+               {
+                  if((this.crypto.checkAddress(contract) == true) && (this.crypto.checkAddress(destinationKT) == true) && (this.crypto.checkAddress(managerAddress) == true))
+                  {
+                     if((contract.substring(0, 2).toLowerCase().equals("kt") == true) && (destinationKT.substring(0, 2).toLowerCase().equals("kt") == true)  && (managerAddress.substring(0, 2).toLowerCase().equals("tz") == true) )
+                     {
+      
+                        if(amount.compareTo(BigDecimal.ZERO) > 0)
+                        {
+                           // Prepares keys.
+                           EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash,
+                                 this.myRandomID);
+                           encKeys.setEncIv(this.encIv);
+                           encKeys.setEncP(this.encPass);
+      
+                           result = rpc.transferToContract(contract, destinationKT, managerAddress, amount, encKeys);
+      
+                        }
+                        else
+                        {
+                           throw new java.lang.RuntimeException("Amount must be greater than zero.");
+                        }
+                        
+                     }
+                     else
+                     {
+                        throw new java.lang.RuntimeException("From address must be KT, To address must be KT and Manager address must be TZ.");
+                     }
+                  }
+                  else
+                  {
+                     throw new java.lang.RuntimeException("Valid Tezos addresses are required in From, To and Manager fields.");
+                  }
+                  
+               }
+               else
+               {
+                  throw new java.lang.RuntimeException("Manager address is mandatory.");
+               }
+               
+            }
+            else
+            {
+               throw new java.lang.RuntimeException("Recipient (To field) is mandatory.");
+            }
+            
+         }
+         else
+         {
+            throw new java.lang.RuntimeException("Sender (From field) is mandatory.");
+         }
+      
+      }
+      else
+      {
+         throw new java.lang.RuntimeException("The fields: From, To, Manager and Amount are required.");
+      }
+
+      return result;
+
+   }
+   
+   public JSONObject sendDelegationFromContract(String delegator, String delegate, String managerAddress) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      if((delegator != null) && (delegate != null)  && (managerAddress != null))
+      {
+         if(delegator.length() > 0)
+         {
+            if(delegate.length() > 0)
+            {
+               if(managerAddress.length() > 0)
+               {
+                  if((this.crypto.checkAddress(delegator) == true) && (this.crypto.checkAddress(delegate) == true) && (this.crypto.checkAddress(managerAddress) == true))
+                  {
+                     if((delegator.substring(0, 2).toLowerCase().equals("kt") == true))
+                     {
+                        // Prepares keys.
+                        EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash,
+                              this.myRandomID);
+                        encKeys.setEncIv(this.encIv);
+                        encKeys.setEncP(this.encPass);
+   
+                        result = rpc.sendDelegationFromContract(delegator, delegate, managerAddress, encKeys);
+                           
+                     }
+                     else
+                     {
+                        throw new java.lang.RuntimeException("Delegator address must be KT.");
+                     }
+                  }
+                  else
+                  {
+                     throw new java.lang.RuntimeException("Valid Tezos addresses are required in Delegator, Delegate and Manager fields.");
+                  }
+                  
+               }
+               else
+               {
+                  throw new java.lang.RuntimeException("Manager address is mandatory.");
+               }
+               
+            }
+            else
+            {
+               throw new java.lang.RuntimeException("Delegate is mandatory.");
+            }
+            
+         }
+         else
+         {
+            throw new java.lang.RuntimeException("Delegator is mandatory.");
+         }
+      
+      }
+      else
+      {
+         throw new java.lang.RuntimeException("The fields: Delegator, Delegate and Manager are required.");
+      }
+
+      return result;
+
+   }
+   
 }

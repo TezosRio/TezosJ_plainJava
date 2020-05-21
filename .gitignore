@@ -1,8 +1,2 @@
-.gradle/
-.vscode/
-bin/
-build/
-out/
-.idea/
-
-.DS_Store 
+/.gradle/
+/build/

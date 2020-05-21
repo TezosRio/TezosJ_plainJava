@@ -1,6 +1,11 @@
 package milfont.com.tezosj.domain;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 import java.util.Random;
+
+import org.bitcoinj.crypto.MnemonicCode;
 
 import milfont.com.tezosj.helper.Base58;
 import milfont.com.tezosj.helper.Base58Check;
@@ -89,9 +94,56 @@ public class Crypto
     public static byte[] zeros(int n)
     {
         return new byte[n];
-    }
-        
+    }        
     // v1.0.2
     
+    public static Boolean checkBip39Word(String word)
+    {
+       
+      try
+      {
+         
+         MnemonicCode mc = new MnemonicCode();
+         List<String> wordList =  mc.getWordList();
+
+         if (wordList.contains(word))
+         {
+            return true;            
+         }
+         else
+         {
+            return false;
+         }
+         
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         return false;
+      }
+
+ 
+    }
+
+    public static Boolean checkValidMnemonic(List<String> words)
+    {
+       
+      try
+      {
+         
+         MnemonicCode mc = new MnemonicCode();
+         mc.check(words);
+
+         return true;
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         return false;
+      }
+
+ 
+    }
+
 
 }

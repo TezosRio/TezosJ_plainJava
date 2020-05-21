@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import milfont.com.tezosj.model.Account;
 import milfont.com.tezosj.model.Transaction;
@@ -20,6 +19,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.json.JSONObject;
 
 public class ConseilGateway {
     private String _apiKey;
