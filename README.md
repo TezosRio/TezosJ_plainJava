@@ -1,7 +1,7 @@
 # TezosJ_plainjava
 
 
-======== VERSION 1.3.6 ========
+======== VERSION 1.3.7 ========
 
 
 A Java SDK for Tezos node interactions with [Conseil](https://cryptonomic.github.io/Conseil/#/) support.
@@ -19,7 +19,7 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import as a Gradle Project into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.3.6.jar) and add to your project's classpath.
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.3.7.jar) and add to your project's classpath.
 
 
 ## Usage
@@ -189,45 +189,6 @@ The library is written in Java and is based on Gradle framework. This repository
 
         
         
-        /////////////////////////////////////////////////////////////////////////////////////
-        //                                                                                 //
-        // Version 1.1.1 - FA1.2 token implementation.                                     //
-        //                                                                                 // 
-        /////////////////////////////////////////////////////////////////////////////////////
-
-
-        // FA12 SmartPy contract : KT1BndJaxhWnsx7AT2KtZwPw49t36HUTpmei
-        // FA12 Alice address    : tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi
-        // FA12 Robert address   : tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP
-
-        FA12Token t = new FA12Token("edskRtWvdnNvKRdamLxTZHemgQHRWq6gkCXB5oY4fzrBkcGoD17umbEj5GN3tXKhcd2QdKM8kdbLQVVuW9wZrGV8Qem1hSkr7J",
-                                    "edpktsYE1gXcFudYp2Lg2Jmx959qAeYduFG8e3qjA8Z9Xf9SVnoUdd", "tz1YNRy5f4vWVWTY8nqhA9Q9P1CjTb8oby6g",
-                                    "", "https://tezos-dev.cryptonomic-infra.tech", "KT1BndJaxhWnsx7AT2KtZwPw49t36HUTpmei" );
-
-
-        // Instantiate the FA12 token object.
-        FA12Wallet t = new FA12Wallet(
-                             "edskRqFp3Z9AqoKrMNFb9bnWNwEsRzbjqjBhzmFMLF9UqB6VBmw7F8ppTiXaAnHtysmi6xFxoHf6rMUz6Y1ipiDz2EgwZQv3pa",
-                             "edpktzrjdb1tx6dQecQGZL6CwhujWg1D2CXfXWBriqtJSA6kvqMwA2",
-                             "tz1hdQscorfqMzFqYxnrApuS5i6QSTuoAp3w", "",
-                             "https://tezos-dev.cryptonomic-infra.tech",
-                             "KT1BndJaxhWnsx7AT2KtZwPw49t36HUTpmei");
-
-        JSONObject o = t.setPause(false);
-        System.out.println(o.get("result"));
-
-        // Mints some tokens to Alice and Bob.
-        t.mint("tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi", 10000000);
-        t.mint("tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP", 5000000);
-
-        // Transfer tokens from Alice to Bob.
-        t.transfer(8000000, "tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi", "tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP");
-
-        // Get allowance from Alice to Bob.
-        Map <String, String> arg = new HashMap<String, String>();
-        arg.put("owner","tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP");
-        arg.put("spender","tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP");
-        t.getAllowance(arg, "tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi");
  
 
 ```
@@ -252,8 +213,8 @@ This software is at Beta stage. It is currently experimental and still under dev
 - Synchronously check (wait until) an operation hash has been included in a block.
 - Now allows (1.0.9) specifying gasLimit and storageLimit to batch transactions through flushTransactions method.
 - Smart Contract calls to entrypoints.
-- Builds Micheline parameters on the fly.
-- FA1.2 compatible (mint, burn, transfer, pause, etc). 
+- Builds entrypoint parameters messages on the fly.
+- FA1.2 (UNDER MAINTENANCE). 
 - Ledger Nano hardware wallet integration through Ledger Javascript library (not included).
 
 The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos network real operations (create_account, transfer_token, etc.)
@@ -266,6 +227,8 @@ The main purpose of TezosJ SDK library is to foster development of applications 
 - TezosJ uses BitcoinJ Java Library https://github.com/bitcoinj/bitcoinj.
 - Special thanks to Tezzigator (https://twitter.com/@tezzigator) for providing the code for Tezos Key Generation in Java.
 - Special thanks to Klassare who helped us to implement Batch Transactions.
+- Special thanks to Raphaël Cauderlier and @FFF who both helped to understand how to build entrypoint parameters messages.
+- Special thanks to my wife and son, for being so helpful and patience during my neverending working hours.
 
 ## License
 

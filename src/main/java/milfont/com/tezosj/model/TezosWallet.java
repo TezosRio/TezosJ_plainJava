@@ -39,7 +39,7 @@ import org.json.JSONObject;
  * Created by Milfont on 21/07/2018.
  */
 
-public class TezosWallet
+public class TezosWallet implements FA12
 {
 
    private String alias = "";
@@ -1431,15 +1431,6 @@ public class TezosWallet
 
    }
 
-   public ArrayList<Map> getContractStorage(String contractAddress) throws Exception
-   {
-      ArrayList<Map> items = new ArrayList<Map>();
-
-      items = (ArrayList<Map>) rpc.getContractStorage(contractAddress);
-
-      return items;
-   }
-
    public JSONObject waitForAndCheckResultByDestinationAddress(String address, Integer numberOfBlocksToWait) throws Exception
    {
       return rpc.waitForAndCheckResultByDestinationAddress(address, numberOfBlocksToWait);
@@ -1726,5 +1717,33 @@ public class TezosWallet
       return result;
 
    }
+
+   @Override
+   public void approve(String contractAddress, String spender, Integer value) throws Exception
+   {
+     callContractEntryPoint(getPublicKeyHash(), contractAddress, new BigDecimal("0"),
+            new BigDecimal("0.1"), "", "", "approve", new String[]
+            { spender, String.valueOf(value) }, false);
+
+   }
+
+   @Override
+   public void transfer(String contractAddress, String from, String to, Integer value) throws Exception
+   {
+      JSONObject jsonObject = callContractEntryPoint(getPublicKeyHash(), contractAddress, new BigDecimal("0"),
+            new BigDecimal("0.1"), "", "", "transfer", new String[]
+            { from, to, String.valueOf(value)}, false);
+
+   }
+
+   public ArrayList<Map> getContractStorage(String contractAddress) throws Exception
+   {
+      ArrayList<Map> items = new ArrayList<Map>();
+
+      items = (ArrayList<Map>) rpc.getContractStorage(contractAddress);
+
+      return items;
+   }
+
    
 }

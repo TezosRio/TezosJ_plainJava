@@ -172,48 +172,6 @@ public class Main
         opHash = (String) jsonObject.get("result"); 
         opHashIncluded = wallet.waitForResult(opHash, 8);
         System.out.println(opHashIncluded + " " + opHash);
-
-        
-        
-        /////////////////////////////////////////////////////////////////////////////////////
-        //                                                                                 //
-        // Version 1.1.1 - FA1.2 token implementation.                                     //
-        //                                                                                 // 
-        /////////////////////////////////////////////////////////////////////////////////////
-
-
-        // FA12 SmartPy contract : KT1BndJaxhWnsx7AT2KtZwPw49t36HUTpmei
-        // FA12 Alice address    : tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi
-        // FA12 Robert address   : tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP
-
-        FA12Token t = new FA12Token("edskRtWvdnNvKRdamLxTZHemgQHRWq6gkCXB5oY4fzrBkcGoD17umbEj5GN3tXKhcd2QdKM8kdbLQVVuW9wZrGV8Qem1hSkr7J",
-                                    "edpktsYE1gXcFudYp2Lg2Jmx959qAeYduFG8e3qjA8Z9Xf9SVnoUdd", "tz1YNRy5f4vWVWTY8nqhA9Q9P1CjTb8oby6g",
-                                    "", "https://tezos-dev.cryptonomic-infra.tech", "KT1BndJaxhWnsx7AT2KtZwPw49t36HUTpmei" );
-
-
-        // Instantiate the FA12 token object.
-        FA12Wallet t = new FA12Wallet(
-                             "edskRqFp3Z9AqoKrMNFb9bnWNwEsRzbjqjBhzmFMLF9UqB6VBmw7F8ppTiXaAnHtysmi6xFxoHf6rMUz6Y1ipiDz2EgwZQv3pa",
-                             "edpktzrjdb1tx6dQecQGZL6CwhujWg1D2CXfXWBriqtJSA6kvqMwA2",
-                             "tz1hdQscorfqMzFqYxnrApuS5i6QSTuoAp3w", "",
-                             "https://tezos-dev.cryptonomic-infra.tech",
-                             "KT1BndJaxhWnsx7AT2KtZwPw49t36HUTpmei");
-
-        JSONObject o = t.setPause(false);
-        System.out.println(o.get("result"));
-
-        // Mints some tokens to Alice and Bob.
-        t.mint("tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi", 10000000);
-        t.mint("tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP", 5000000);
-
-        // Transfer tokens from Alice to Bob.
-        t.transfer(8000000, "tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi", "tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP");
-
-        // Get allowance from Alice to Bob.
-        Map <String, String> arg = new HashMap<String, String>();
-        arg.put("owner","tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP");
-        arg.put("spender","tz1Ns3YQJR6piMZ8GrD2iYu94Ybi1HFfNyBP");
-        t.getAllowance(arg, "tz1WxrQuZ4CK1MBUa2GqUWK1yJ4J6EtG1Gwi");
       
       */
       

@@ -1298,18 +1298,25 @@ public class TezosGateway
    
          JSONObject myparamJson = new JSONObject();
          
-         String[] contractEntryPoints = getContractEntryPoints(contract);
+         String[] contractEntrypoint = getContractEntryPoints(contract);
+
+         if (Arrays.asList(contractEntrypoint).contains(entrypoint) == false)
+         {
+            throw new Exception("Wrong or missing entrypoint name");
+         }
+
+         
          String[] contractEntryPointParameters = getContractEntryPointsParameters(contract, entrypoint, "names");
          String[] contractEntryPointParametersTypes = getContractEntryPointsParameters(contract, entrypoint, "types");
-   
-         myparamJson = paramValueBuilder(entrypoint, contractEntryPoints, parameters, contractEntryPointParameters,
+            
+         myparamJson = paramValueBuilder(entrypoint, contractEntrypoint, parameters, contractEntryPointParameters,
                contractEntryPointParametersTypes);
 
          // Adds the smart contract parameters to the transaction.
          myParams = new JSONObject();
-         myParams.put("entrypoint", "default");
+         myParams.put("entrypoint", entrypoint);
          myParams.put("value", myparamJson);
-
+         
       }
       else
       {
@@ -1331,12 +1338,14 @@ public class TezosGateway
 
    
    private JSONObject paramValueBuilder(String entrypoint, String[] contractEntrypoints, String[] parameters,
-                                        String[] contractEntryPointParameters, String[] datatypes)
+                                        String[] contractEntryPointParameters, String[] datatypes) throws Exception
    {
-
-      // Creates a base Pair, so we can build our Michelson message parameter.
-      Pair<Pair, String> basePair = null;
-
+      
+      if (parameters.length != datatypes.length)
+      {
+         throw new Exception("Wrong number of parameters to contract entrypoint");
+      }
+            
       // Creates the JSON object that will be returned by the methd.
       JSONObject myJsonObj = new JSONObject();
 
@@ -1384,134 +1393,217 @@ public class TezosGateway
 
       }
 
-      // Builds the parameters pairs and formats them as JSON.
-      myJsonObj = buildParameterPairs(myJsonObj, basePair, parametersList, typesList, 0, contractEntryPointParameters);
-
-      // Builds the Micheline formatted JSON. Only if an entrypoint was specified.
-      if(entrypoint != null)
-      {
-         if((entrypoint.length() > 0) && (entrypoint.equals("default") == false))
-         {
-            // Builds the Michelson message and formats it as JSON.
-            myJsonObj = buildMessage(myJsonObj, entrypoint, entrypointsList);
-         }
-      }
-
+      Pair<Pair, List> basePair = null;
+      Pair pair = buildParameterPairs(myJsonObj, basePair, parametersList, contractEntryPointParameters, false);
+      
+      // Create JSON from Pair.
+      myJsonObj = (JSONObject) solvePair(pair, typesList);
+      
       return myJsonObj;
+      
    }
-
-   private JSONObject buildParameterPairs(JSONObject jsonObj, Pair pair, List<String> parameters,
-                                          List<String> datatypes, Integer firstElement, String[] contractEntryPointParameters )
+    
+   private Object solvePair(Object pair, List datatypes) throws Exception
    {
-
-      if(parameters.size() == 1)
+         
+      Object result = null;
+      
+      // Extract and check contents.
+      if (hasPairs((Pair) pair) == false)
       {
-         jsonObj.put(datatypes.get(0), parameters.get(0));
+         // Here we've got List in both sides. But they might have more than one element.
+         Object jsonLeft  = ((Pair) pair).getLeft() == null ? null : toJsonFormat((List)((Pair) pair).getLeft(), datatypes, 0);
+         Object jsonRight = ((Pair) pair).getRight() == null ? null : toJsonFormat((List)((Pair) pair).getRight(), datatypes, ((Pair) pair).getLeft() == null ? 0 : ((List)((Pair) pair).getLeft()).size() );
+         
+         // Test if there is only one parameter.
+         if (jsonLeft == null)
+            if (jsonRight == null)
+               throw new Exception("Pair cannot be (null, null)");
+            else
+               return jsonRight;
+         else if (jsonRight == null)
+            return jsonLeft;
+
+         // Build json outter pair.
+         JSONObject jsonPair = new JSONObject();
+         jsonPair.put("prim", "Pair");
+         
+         // Create pair contents array.
+         JSONArray pairContents = new JSONArray();
+         pairContents.put(jsonLeft);
+         pairContents.put(jsonRight);
+         jsonPair.put("args", pairContents);
+         
+         return jsonPair;
       }
       else
       {
-
-         for(int i = firstElement; i < parameters.size(); i++)
-         {
-            if(pair == null)
-            {
-               pair = new MutablePair<>(parameters.get(i), parameters.get(i + 1));
-
-               // Build JSON object with "prim" and "args".
-               jsonObj.put("prim", "Pair");
-
-               JSONArray jsonArray = new JSONArray();
-
-               JSONObject newObj1 = new JSONObject();
-               newObj1.put((String) datatypes.get(i), (String) parameters.get(i));
-               jsonArray.put(newObj1);
-
-               JSONObject newObj2 = new JSONObject();
-               newObj2.put((String) datatypes.get(i + 1), (String) parameters.get(i + 1));
-               jsonArray.put(newObj2);
-
-               jsonObj.put("args", jsonArray);
-
-            }
-            else
-            {
-               if((i + 1) < parameters.size())
-               {
-                  pair = new MutablePair<>(pair, parameters.get(i + 1));
-
-                  // Builds new JSON object with "prim" and "args".
-                  JSONObject newJsonObj = new JSONObject();
-                  newJsonObj.put("prim", "Pair");
-                  JSONArray jsonArray = new JSONArray();
-                  jsonArray.put(jsonObj);
-
-                  JSONObject obj = new JSONObject();
-                  obj.put((String) datatypes.get(i + 1), (String) parameters.get(i + 1));
-                  jsonArray.put(obj);
-
-                  newJsonObj.put("args", jsonArray);
-
-                  return buildParameterPairs(newJsonObj, pair, parameters, datatypes, i + 1, contractEntryPointParameters);
-
-               }
-            }
-         }
+         Object jsonLeft = solvePair(((Pair<Pair, List>) pair).getLeft(), datatypes);
+         Object jsonRight = solvePair(((Pair<Pair, List>) pair).getRight(), datatypes.subList( countPairElements((Pair) ((Pair) pair).getLeft()), datatypes.size()) );
+         
+         // Build json outter pair.
+         JSONObject jsonPair = new JSONObject();
+         jsonPair.put("prim", "Pair");
+         
+         // Create pair contents array.
+         JSONArray pairContents = new JSONArray();
+         pairContents.put(jsonLeft);
+         pairContents.put(jsonRight);
+         jsonPair.put("args", pairContents);
+         
+         return jsonPair;
       }
-
-      return jsonObj;
 
    }
 
-   private JSONObject buildMessage(JSONObject jsonObj, String entrypoint, List<String> entrypoints)
+   private Integer countPairElements(Pair pair)
    {
-      JSONObject messageJsonObj = new JSONObject();
+      Integer leftCount = 0;
+      Integer rightCount = 0;
+      
+      Object left = pair.getLeft();
+      Object right = pair.getRight();
 
-      // Calculates the number of "Lefts".
-      Integer entrypointPosition = entrypoints.indexOf(entrypoint) + 1;
-      Integer numberOfLefts = (entrypoints.size() - entrypointPosition);
-
-      if(entrypointPosition > 1)
+      if(left instanceof Pair)
       {
-         // Build JSON object with "prim" and "args".
-         messageJsonObj.put("prim", "Right");
-
-         JSONArray jsonArray = new JSONArray();
-         jsonArray.put(jsonObj);
-         messageJsonObj.put("args", jsonArray);
+         leftCount = countPairElements((Pair) left);
+      }
+      else
+      {
+         leftCount = ((List)left).size();
+      }
+      
+      if(right instanceof Pair)
+      {
+         rightCount = countPairElements((Pair) right);
+      }
+      else
+      {
+         rightCount = ((List)right).size();
       }
 
-      for(int i = 0; i < numberOfLefts; i++)
-      {
-         if(messageJsonObj.length() == 0)
-         {
-            // Build JSON object with "prim" and "args".
-            messageJsonObj.put("prim", "Left");
+      return leftCount+rightCount;
 
-            JSONArray jsonArray = new JSONArray();
-            jsonArray.put(jsonObj);
-            messageJsonObj.put("args", jsonArray);
+   }
+   
+   private Boolean hasPairs(Pair pair)
+   {
+      Object left = pair.getLeft();
+      Object right = pair.getRight();
+      
+      if( (left instanceof Pair) || (right instanceof Pair) )
+      {
+         return true;
+      }
+      else
+      {
+         return false;
+      }
+   }
+   
+   private JSONObject toJsonFormat(List list, List datatypes, Integer firstElement)
+   { 
+      JSONArray result = new JSONArray();
+            
+      for(int i=0;i<list.size();i++)
+      {
+         JSONObject element = new JSONObject();
+         element.put((String) datatypes.get(firstElement + i), list.get(i));
+       
+         // Add element to array.
+         result.put(element);
+      }
+               
+      if (result.length() > 1)
+      {
+         // Wrap json result in outter pair.
+         JSONObject jsonPair = new JSONObject();
+         jsonPair.put("prim", "Pair");
+         jsonPair.put("args", result);   
+         
+         return jsonPair;
+      }
+      else
+      {
+         return (JSONObject)result.get(0);
+      }
+
+   }
+   
+   private Pair buildParameterPairs(JSONObject jsonObj, Pair pair, List<String> parameters,
+                                    String[] contractEntryPointParameters,
+                                    Boolean doSolveLeft) throws Exception
+   {
+      
+      // Test parameters validity.
+      if (parameters.isEmpty())
+      {
+         throw new Exception("Missing parameters to pass to contract entrypoint");
+      }
+
+      List<String> left = new ArrayList<String>();
+      List<String> right = new ArrayList<String>();
+      Pair newPair = null;
+      
+      if(parameters.size() == 1)
+      {         
+         // If number of parameters is only 1.
+         newPair = new MutablePair<>(null, new ArrayList<String>(Arrays.asList(parameters.get(0))));
+      }
+      else 
+      {
+
+         if (pair == null)
+         {
+            Integer half = ( Math.abs(parameters.size() / 2) );
+
+            left = parameters.subList(0, half);
+            right = parameters.subList(half, parameters.size());
+
+            newPair = new MutablePair<>(left, right);
+                        
          }
          else
          {
-            JSONObject newJsonObj = new JSONObject();
-
-            // Build JSON object with "prim" and "args".
-            if(entrypointPosition < entrypoints.size())
+            List<String> newList;
+            
+            if (doSolveLeft == true)
             {
-               newJsonObj.put("prim", "Left");
+               newList = ((List<String>) pair.getLeft());
             }
+            else
+            {
+               newList = ((List<String>) pair.getRight());
+            }
+            
+            Integer half = ( Math.abs( newList.size() / 2) );
 
-            JSONArray jsonArray = new JSONArray();
-            jsonArray.put(messageJsonObj);
-            newJsonObj.put("args", jsonArray);
-            messageJsonObj = newJsonObj;
+            left = newList.subList(0, half);
+            right = newList.subList(half, newList.size());
+
+            newPair = new MutablePair<>(left, right);
+            
          }
+
+         
+         if (  (((List)newPair.getRight()).size() > 2) || (((List)newPair.getLeft()).size() > 2)  )
+         {
+
+               newPair = new MutablePair<>(buildParameterPairs(jsonObj, newPair, parameters, contractEntryPointParameters, true),
+                                           buildParameterPairs(jsonObj, newPair, parameters, contractEntryPointParameters, false));
+
+         }
+         else
+         {
+            return newPair;
+         }
+
       }
 
-      return messageJsonObj;
+      return newPair;
 
-   }
-
+   }   
+   
    private String[] getContractEntryPoints(String contractAddress) throws Exception
    {
       JSONObject response = (JSONObject) query(
@@ -1556,7 +1648,7 @@ public class TezosGateway
       JSONObject response = (JSONObject) query(
             "/chains/main/blocks/head/context/contracts/" + contractAddress + "/entrypoints/" + entrypoint, null);
 
-      JSONArray paramArray = decodeMichelineParameters(response, null);
+      JSONArray paramArray = decodeParameters(response, null);
 
       JSONObject jsonObj = new JSONObject();
 
@@ -1564,7 +1656,7 @@ public class TezosGateway
 
       if(namesOrTypes.equals("names"))
       {
-         for(int i = paramArray.length() - 1; i >= 0; i--)
+         for(int i = 0; i < paramArray.length(); i++)
          {
             jsonObj = (JSONObject) paramArray.get(i);
             if(jsonObj.has("annots"))
@@ -1576,7 +1668,7 @@ public class TezosGateway
       }
       else if(namesOrTypes.equals("types"))
       {
-         for(int i = paramArray.length() - 1; i >= 0; i--)
+         for(int i = 0;i < paramArray.length(); i++)
          {
             jsonObj = (JSONObject) paramArray.get(i);
             if(jsonObj.has("prim"))
@@ -1592,7 +1684,7 @@ public class TezosGateway
       return tempArray;
    }
 
-   private JSONArray decodeMichelineParameters(JSONObject jsonObj, JSONArray builtArray)
+   private JSONArray decodeParameters(JSONObject jsonObj, JSONArray builtArray)
    {
       JSONObject left = new JSONObject();
       JSONObject right = new JSONObject();
@@ -1605,22 +1697,24 @@ public class TezosGateway
          }
 
          if(jsonObj.has("args"))
-         {
-            JSONArray myArr = jsonObj.getJSONArray("args");
-            left = myArr.getJSONObject(0);
+         {            
+            
+            JSONArray myArr = jsonObj.getJSONArray("args");  
+            left = myArr.getJSONObject(0);            
+            builtArray = decodeParameters(left, builtArray);
+
             right = myArr.getJSONObject(1);
+            builtArray = decodeParameters(right, builtArray);
+
          }
          else
          {
-            right = jsonObj;
+            builtArray.put(jsonObj);
+            return builtArray;
          }
 
-         builtArray.put(right);
-         return decodeMichelineParameters(left, builtArray);
-
       }
-      builtArray.put(left);
-
+      
       return builtArray;
    }
 
@@ -1628,20 +1722,21 @@ public class TezosGateway
    {
 
       ArrayList<Map> items = new ArrayList<Map>();
-      /*
-       * JSONObject response = (JSONObject) query(
-       * "/chains/main/blocks/head/context/contracts/" + contractAddress +
-       * "/storage/", null);
-       * 
-       * JSONArray storageArray = decodeMichelineParameters(response, null);
-       * 
-       * JSONObject jsonObj = new JSONObject();
-       * 
-       * for(int i = 0; i < storageArray.length(); i++) { jsonObj = (JSONObject)
-       * storageArray.get(i); Map<String, Object> map = new HashMap<String, Object>();
-       * map = toMap(jsonObj); items.add(map); }
-       */
-      return items;
+      
+       JSONObject response = (JSONObject) query("/chains/main/blocks/head/context/contracts/" + contractAddress + "/storage/", null);
+        
+       JSONArray storageArray = decodeParameters(response, null);
+        
+        JSONObject jsonObj = new JSONObject();
+        
+        for(int i = 0; i < storageArray.length(); i++)
+        {
+           jsonObj = (JSONObject) storageArray.get(i);
+           Map<String, Object> map = new HashMap<String, Object>();
+           map = toMap(jsonObj); items.add(map);
+        }
+       
+       return items;
    }
 
    public static Map<String, Object> toMap(JSONObject object) throws JSONException
@@ -2116,6 +2211,37 @@ public class TezosGateway
       
    }
 
+
+   static int countOccurences(String str, String word)  
+   { 
+     
+       int count = 0; 
+       for (int i = 0; i < str.length(); i++)  
+       { 
+
+          int pos = str.indexOf(word); 
+          if ( (pos > 0) && (pos > i) )
+          {
+             count++;
+             i = pos + 1;
+          }
+          
+       } 
+     
+       return count; 
+   } 
+
+   String replaceLast(String string, String substring, String replacement)
+   {
+      int index = string.lastIndexOf(substring);
+      
+      if (index == -1)
+      {
+        return string;
+      }
+     
+      return string.substring(0, index) + replacement + string.substring(index+substring.length());
    
+   }
    
 }
