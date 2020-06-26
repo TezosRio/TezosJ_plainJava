@@ -11,6 +11,7 @@ import static milfont.com.tezosj.helper.Encoder.HEX;
 import static milfont.com.tezosj.helper.Constants.UTEZ;
 import static milfont.com.tezosj.helper.Constants.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.cert.CertificateException;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.io.BufferedReader;
@@ -205,6 +207,13 @@ public class TezosGateway
       head = (JSONObject) query("/chains/main/blocks/head/header", null);
       forgedOperationGroup = forgeOperations(head, operations);
 
+      // Check for errors.
+      if(forgedOperationGroup.toLowerCase().contains("failed") || forgedOperationGroup.toLowerCase().contains("unexpected")
+            || forgedOperationGroup.toLowerCase().contains("missing") || forgedOperationGroup.toLowerCase().contains("error"))
+      {
+         throw new Exception("Error while forging operation : " + forgedOperationGroup);
+      }
+      
       SignedOperationGroup signedOpGroup = signOperationGroup(forgedOperationGroup, encKeys);
       
       if (signedOpGroup == null) // User cancelled the operation.
@@ -304,6 +313,44 @@ public class TezosGateway
       return result;
    }
 
+   // Call Tezos RUN_OPERATION.
+   private JSONObject callRunOperation(JSONArray operations, EncKeys encKeys) throws Exception
+   {
+      JSONObject result = new JSONObject();
+      JSONObject head = new JSONObject();
+      String forgedOperationGroup = "";
+
+      head = (JSONObject) query("/chains/main/blocks/head/header", null);
+      forgedOperationGroup = forgeOperations(head, operations);
+
+      // Check for errors.
+      if(forgedOperationGroup.toLowerCase().contains("failed") || forgedOperationGroup.toLowerCase().contains("unexpected")
+            || forgedOperationGroup.toLowerCase().contains("missing") || forgedOperationGroup.toLowerCase().contains("error"))
+      {
+         throw new Exception("Error while forging operation : " + forgedOperationGroup);
+      }
+      
+      SignedOperationGroup signedOpGroup = signOperationGroupSimulation(forgedOperationGroup, null);
+      
+      if (signedOpGroup == null) // User cancelled the operation.
+      {
+         result.put("result", "There were errors: 'User has cancelled the operation'");
+         return result;
+      }
+      else
+      {
+         
+         String operationGroupHash = computeOperationHash(signedOpGroup);
+         
+         // Call RUN_OPERATIONS.
+         JSONObject runOp = runOperation(head, operations, operationGroupHash, forgedOperationGroup, signedOpGroup);
+            
+         result = runOp;
+      }
+      return result;
+   }
+
+   
    // Sends a transaction to the Tezos node.
    public JSONObject sendTransaction(String from, String to, BigDecimal amount, BigDecimal fee, String gasLimit,
                                      String storageLimit, EncKeys encKeys)
@@ -401,6 +448,7 @@ public class TezosGateway
       
       if((Global.ledgerDerivationPath.isEmpty()==false)&&(Global.ledgerTezosFolderPath.isEmpty()==false))
       {
+         System.out.println(Global.CONFIRM_WITH_LEDGER_MESSAGE);
          signed = signWithLedger(HEX.decode(forgedOperation), "03");
       }
       else
@@ -421,6 +469,30 @@ public class TezosGateway
       }
    }
 
+   private SignedOperationGroup signOperationGroupSimulation(String forgedOperation, EncKeys encKeys) throws Exception
+   {
+      JSONObject signed = new JSONObject();
+
+      byte[] bytes = HEX.decode(forgedOperation);
+      byte[] sig = new byte[64];
+
+      byte[] edsigPrefix = { 9, (byte) 245, (byte) 205, (byte) 134, 18 };
+      byte[] edsigPrefixedSig = new byte[edsigPrefix.length + sig.length];
+      edsigPrefixedSig = ArrayUtils.addAll(edsigPrefix, sig);
+      String edsig = Base58Check.encode(edsigPrefixedSig);
+      String sbytes = HEX.encode(bytes) + HEX.encode(sig);
+
+      signed.put("bytes", HEX.encode(bytes));
+      signed.put("sig", HEX.encode(sig));
+      signed.put("edsig", edsig);
+      signed.put("sbytes", sbytes);
+      
+      // Prepares the object to be returned.
+      byte[] workBytes = ArrayUtils.addAll(HEX.decode(forgedOperation), HEX.decode((String) signed.get("sig")));
+      return new SignedOperationGroup(workBytes, (String) signed.get("edsig"), (String) signed.get("sbytes"));
+   }
+
+   
    private String forgeOperations(JSONObject blockHead, JSONArray operations) throws Exception
    {
       JSONObject result = new JSONObject();
@@ -462,6 +534,15 @@ public class TezosGateway
       return (JSONObject) query("/chains/main/blocks/head/helpers/preapply/operations", payload.toString());
    }
 
+   private JSONObject nodeRunOperation(JSONArray payload, String chainId) throws Exception
+   {
+      JSONObject operation = new JSONObject();      
+      operation.put("operation", payload.get(0));
+      operation.put("chain_id", chainId);
+      
+      return (JSONObject) query("/chains/main/blocks/head/helpers/scripts/run_operation", operation.toString());
+   }
+   
    private JSONObject applyOperation(JSONObject head, JSONArray operations, String operationGroupHash,
                                      String forgedOperationGroup, SignedOperationGroup signedOpGroup)
          throws Exception
@@ -478,6 +559,23 @@ public class TezosGateway
       return nodeApplyOperation(payload);
    }
 
+   private JSONObject runOperation(JSONObject head, JSONArray operations, String operationGroupHash,
+                                   String forgedOperationGroup, SignedOperationGroup signedOpGroup)
+         throws Exception
+   {
+      JSONObject jsonObject = new JSONObject();
+      String chainId = head.get("chain_id").toString();
+      jsonObject.put("branch", head.get("hash"));
+      jsonObject.put("contents", operations);
+      jsonObject.put("signature", signedOpGroup.getSignature());
+
+      JSONArray payload = new JSONArray();
+      payload.put(jsonObject);
+
+      return nodeRunOperation(payload, chainId);
+   }
+
+   
    private JSONObject checkAppliedOperationResults(JSONObject appliedOp) throws Exception
    {
       JSONObject returned = new JSONObject();
@@ -1209,7 +1307,7 @@ public class TezosGateway
    // Calls a contract passing parameters.
    public JSONObject callContractEntryPoint(String from, String contract, BigDecimal amount, BigDecimal fee,
                                             String gasLimit, String storageLimit, EncKeys encKeys, String entrypoint,
-                                            String[] parameters, Boolean rawParameter)
+                                            String[] parameters, Boolean rawParameter, String smartContractType)
          throws Exception
    {
       JSONObject result = new JSONObject();
@@ -1298,19 +1396,81 @@ public class TezosGateway
    
          JSONObject myparamJson = new JSONObject();
          
-         String[] contractEntrypoint = getContractEntryPoints(contract);
+         String[] contractEntrypoints = getContractEntryPoints(contract);
 
-         if (Arrays.asList(contractEntrypoint).contains(entrypoint) == false)
+         if (Arrays.asList(contractEntrypoints).contains("default") == false)
          {
-            throw new Exception("Wrong or missing entrypoint name");
+            if (Arrays.asList(contractEntrypoints).contains(entrypoint) == false)
+            {
+               throw new Exception("Wrong or missing entrypoint name");
+            }
+         }
+         else
+         {
+            entrypoint = "default";                 
+         }
+         
+         // Check if smartContractType parameter is null or empty.
+         if (smartContractType == null)
+         {
+            smartContractType = Global.GENERIC_STANDARD;
+         }
+         else if (smartContractType.isEmpty() == true)
+         {
+            smartContractType = Global.GENERIC_STANDARD;
          }
 
-         
-         String[] contractEntryPointParameters = getContractEntryPointsParameters(contract, entrypoint, "names");
-         String[] contractEntryPointParametersTypes = getContractEntryPointsParameters(contract, entrypoint, "types");
+         // According to each smart contract standard, get the entrypoint parameters.
+         String[] contractEntryPointParameters = null;
+         String[] contractEntryPointParametersTypes = null;
+         if(smartContractType.equals(Global.GENERIC_STANDARD))
+         {
             
-         myparamJson = paramValueBuilder(entrypoint, contractEntrypoint, parameters, contractEntryPointParameters,
-               contractEntryPointParametersTypes);
+            contractEntryPointParameters = getContractEntryPointsParameters(contract, entrypoint, "names");
+            contractEntryPointParametersTypes = getContractEntryPointsParameters(contract, entrypoint, "types");
+            
+         }
+         else if(smartContractType.equals(Global.FA12_STANDARD))
+         {
+            // If the smartContractType standard is FA1.2, then we already know the entrypoint parameters.            
+            if (entrypoint.equals(Global.FA12_TRANSFER))
+            {
+               contractEntryPointParameters = new String[] { "from", "to", "value" };
+               contractEntryPointParametersTypes = new String[] { "string", "string", "nat" };
+            }
+            else if (entrypoint.equals(Global.FA12_APPROVE))
+            {  
+               contractEntryPointParameters = new String[] { "spender", "value" };
+               contractEntryPointParametersTypes = new String[] { "string", "nat" };
+            }
+            else if (entrypoint.equals(Global.FA12_GET_ALLOWANCE))
+            {  
+               contractEntryPointParameters = new String[] { "owner", "spender", "callback" };
+               contractEntryPointParametersTypes = new String[] { "string", "string", "string" };
+            }
+            else if (entrypoint.equals(Global.FA12_GET_BALANCE))
+            {
+               contractEntryPointParameters = new String[] { "owner", "callback" };
+               contractEntryPointParametersTypes = new String[] { "string", "string" };
+            }
+            else if (entrypoint.equals(Global.FA12_GET_TOTAL_SUPPLY))
+            {
+               contractEntryPointParameters = new String[] { "unit", "callback" };
+               contractEntryPointParametersTypes = new String[] { "unit", "string" };
+            }
+               
+         }
+         else // fallback.
+         {
+            smartContractType = Global.GENERIC_STANDARD;
+            contractEntryPointParameters = getContractEntryPointsParameters(contract, entrypoint, "names");
+            contractEntryPointParametersTypes = getContractEntryPointsParameters(contract, entrypoint, "types");            
+         }
+            
+         myparamJson = paramValueBuilder(entrypoint, contractEntrypoints, parameters,
+                                         contractEntryPointParameters,
+                                         contractEntryPointParametersTypes,
+                                         smartContractType);
 
          // Adds the smart contract parameters to the transaction.
          myParams = new JSONObject();
@@ -1331,21 +1491,35 @@ public class TezosGateway
 
       operations.put(transaction);
 
-      result = (JSONObject) sendOperation(operations, encKeys);
-
+      if ( (smartContractType == Global.FA12_STANDARD) && (entrypoint.equals(Global.FA12_TRANSFER) == false) && (entrypoint.equals(Global.FA12_APPROVE) == false))
+      {
+         
+         JSONObject jsonObj = (JSONObject) callRunOperation(operations, encKeys);
+         
+         result.put("result", jsonObj);
+      }
+      else
+      {
+         result = (JSONObject) sendOperation(operations, encKeys);
+      }
+      
       return result;
    }
 
    
    private JSONObject paramValueBuilder(String entrypoint, String[] contractEntrypoints, String[] parameters,
-                                        String[] contractEntryPointParameters, String[] datatypes) throws Exception
+                                        String[] contractEntryPointParameters, String[] datatypes,
+                                        String smartContractType) throws Exception
    {
       
-      if (parameters.length != datatypes.length)
+      if (smartContractType.equals(Global.GENERIC_STANDARD))
       {
-         throw new Exception("Wrong number of parameters to contract entrypoint");
+         if (parameters.length != datatypes.length)
+         {
+            throw new Exception("Wrong number of parameters to contract entrypoint");
+         }
       }
-            
+      
       // Creates the JSON object that will be returned by the methd.
       JSONObject myJsonObj = new JSONObject();
 
@@ -1383,9 +1557,18 @@ public class TezosGateway
                typesList.set(i, "prim");
                break;
             case "unit":
+               typesList.set(i, "unit");
+               break;
+            case "address":
                typesList.set(i, "string");
                break;
-
+            case "owner":
+               typesList.set(i, "string");
+               break;
+            case "spender":
+               typesList.set(i, "string");
+               break;
+               
             default:
                typesList.set(i, "string");
 
@@ -1394,16 +1577,16 @@ public class TezosGateway
       }
 
       Pair<Pair, List> basePair = null;
-      Pair pair = buildParameterPairs(myJsonObj, basePair, parametersList, contractEntryPointParameters, false);
+      Pair pair = buildParameterPairs(myJsonObj, basePair, parametersList, contractEntryPointParameters, false, smartContractType, entrypoint);
       
       // Create JSON from Pair.
-      myJsonObj = (JSONObject) solvePair(pair, typesList);
+      myJsonObj = (JSONObject) solvePair(pair, typesList, smartContractType);
       
       return myJsonObj;
       
    }
     
-   private Object solvePair(Object pair, List datatypes) throws Exception
+   private Object solvePair(Object pair, List datatypes, String smartContractType) throws Exception
    {
          
       Object result = null;
@@ -1417,13 +1600,51 @@ public class TezosGateway
          
          // Test if there is only one parameter.
          if (jsonLeft == null)
+         {
             if (jsonRight == null)
+            {
                throw new Exception("Pair cannot be (null, null)");
+            }
             else
-               return jsonRight;
-         else if (jsonRight == null)
-            return jsonLeft;
+            {
+               // FA1.2 handling
+               if (smartContractType.equals(Global.FA12_STANDARD))
+               {
+                  if (((JSONObject) jsonRight).has("unit"))
+                  {
+                     JSONObject tmpObj = new JSONObject(), tmpItem1 = new JSONObject(), tmpItem2 = new JSONObject();
+                     tmpObj.put("prim", "Pair");
+                     Iterator<?> keys = ((JSONObject) jsonRight).keys();
+                     String key = (String)keys.next();
+                     tmpItem1.put("prim", "Unit");
+                     tmpItem2.put("string", ((JSONObject) jsonRight).get(key));
+                     
+                     JSONArray arr= new JSONArray();
+                     arr.put(tmpItem1);
+                     arr.put(tmpItem2);
+                   
+                     tmpObj.put("args", arr);
+                     
+                     return tmpObj;
+                  }
+                  else
+                  {
+                     return jsonRight;
+                  }
 
+               }
+               else
+               {
+                  return jsonRight;
+               }
+               
+            }
+         }
+         else if (jsonRight == null)
+         {
+            return jsonLeft;
+         }
+         
          // Build json outter pair.
          JSONObject jsonPair = new JSONObject();
          jsonPair.put("prim", "Pair");
@@ -1438,8 +1659,8 @@ public class TezosGateway
       }
       else
       {
-         Object jsonLeft = solvePair(((Pair<Pair, List>) pair).getLeft(), datatypes);
-         Object jsonRight = solvePair(((Pair<Pair, List>) pair).getRight(), datatypes.subList( countPairElements((Pair) ((Pair) pair).getLeft()), datatypes.size()) );
+         Object jsonLeft = solvePair(((Pair<Pair, List>) pair).getLeft(), datatypes, smartContractType);
+         Object jsonRight = solvePair(((Pair<Pair, List>) pair).getRight(), datatypes.subList( countPairElements((Pair) ((Pair) pair).getLeft()), datatypes.size()), smartContractType );
          
          // Build json outter pair.
          JSONObject jsonPair = new JSONObject();
@@ -1509,9 +1730,10 @@ public class TezosGateway
       {
          JSONObject element = new JSONObject();
          element.put((String) datatypes.get(firstElement + i), list.get(i));
-       
+
          // Add element to array.
          result.put(element);
+
       }
                
       if (result.length() > 1)
@@ -1532,7 +1754,7 @@ public class TezosGateway
    
    private Pair buildParameterPairs(JSONObject jsonObj, Pair pair, List<String> parameters,
                                     String[] contractEntryPointParameters,
-                                    Boolean doSolveLeft) throws Exception
+                                    Boolean doSolveLeft, String smartContractType, String entrypoint) throws Exception
    {
       
       // Test parameters validity.
@@ -1555,13 +1777,22 @@ public class TezosGateway
 
          if (pair == null)
          {
-            Integer half = ( Math.abs(parameters.size() / 2) );
-
-            left = parameters.subList(0, half);
-            right = parameters.subList(half, parameters.size());
-
-            newPair = new MutablePair<>(left, right);
-                        
+            if (smartContractType.equals(Global.FA12_STANDARD) && entrypoint.equals(Global.FA12_GET_ALLOWANCE))
+            {
+               left = parameters.subList(0, 2);
+               right = parameters.subList(2, parameters.size());
+   
+               newPair = new MutablePair<>(left, right);
+            }
+            else
+            {
+               Integer half = ( Math.abs(parameters.size() / 2) );
+   
+               left = parameters.subList(0, half);
+               right = parameters.subList(half, parameters.size());
+   
+               newPair = new MutablePair<>(left, right);
+            }           
          }
          else
          {
@@ -1589,8 +1820,8 @@ public class TezosGateway
          if (  (((List)newPair.getRight()).size() > 2) || (((List)newPair.getLeft()).size() > 2)  )
          {
 
-               newPair = new MutablePair<>(buildParameterPairs(jsonObj, newPair, parameters, contractEntryPointParameters, true),
-                                           buildParameterPairs(jsonObj, newPair, parameters, contractEntryPointParameters, false));
+               newPair = new MutablePair<>(buildParameterPairs(jsonObj, newPair, parameters, contractEntryPointParameters, true, smartContractType, entrypoint),
+                                           buildParameterPairs(jsonObj, newPair, parameters, contractEntryPointParameters, false, smartContractType, entrypoint));
 
          }
          else
@@ -1662,7 +1893,7 @@ public class TezosGateway
             if(jsonObj.has("annots"))
             {
                JSONArray annotsArray = (JSONArray) jsonObj.get("annots");
-               parameters.add((String) annotsArray.getString(0).replace("%", ""));
+               parameters.add(((String) annotsArray.getString(0).replace("%", "")).replace(":", ""));
             }
          }
       }
@@ -1673,7 +1904,10 @@ public class TezosGateway
             jsonObj = (JSONObject) paramArray.get(i);
             if(jsonObj.has("prim"))
             {
-               parameters.add((String) jsonObj.get("prim"));
+               if ( (jsonObj.get("prim").toString()).contains("contract") == false)
+               {
+                  parameters.add((String) jsonObj.get("prim"));
+               }
             }
          }
       }
@@ -1686,9 +1920,10 @@ public class TezosGateway
 
    private JSONArray decodeParameters(JSONObject jsonObj, JSONArray builtArray)
    {
+      
       JSONObject left = new JSONObject();
       JSONObject right = new JSONObject();
-
+      
       if((jsonObj.has("args") == true) || (jsonObj.has("prim") == true))
       {
          if(builtArray == null)
@@ -1697,19 +1932,23 @@ public class TezosGateway
          }
 
          if(jsonObj.has("args"))
-         {            
-            
+         {                        
             JSONArray myArr = jsonObj.getJSONArray("args");  
             left = myArr.getJSONObject(0);            
             builtArray = decodeParameters(left, builtArray);
 
-            right = myArr.getJSONObject(1);
-            builtArray = decodeParameters(right, builtArray);
-
+            if (myArr.length() > 1)
+            {
+               right = myArr.getJSONObject(1);
+               builtArray = decodeParameters(right, builtArray);
+            }
          }
          else
          {
+            
+            // Now we can extract a single element.
             builtArray.put(jsonObj);
+            
             return builtArray;
          }
 
@@ -1864,7 +2103,7 @@ public class TezosGateway
       return result.equals("true") ? true : false;
 
    }
-
+   
    public String checkOperationResult(JSONObject blockRead, String operationHash)
    {
       String result = "";
@@ -2137,7 +2376,7 @@ public class TezosGateway
                        + "{ \"prim\": \"UNIT\" }, { \"prim\": \"TRANSFER_TOKENS\" },"
                        + "{ \"prim\": \"CONS\" }]";
 
-      result = callContractEntryPoint(managerAddress, contract, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys, "do", new String[] { michelson }, true );
+      result = callContractEntryPoint(managerAddress, contract, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys, "do", new String[] { michelson }, true, Global.GENERIC_STANDARD );
       
       return result;
       
@@ -2179,7 +2418,7 @@ public class TezosGateway
                        + "{ \"prim\": \"CONS\" }]";
 
 
-      result = callContractEntryPoint(managerAddress, contract, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys,"do", new String[] { michelson }, true);
+      result = callContractEntryPoint(managerAddress, contract, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys,"do", new String[] { michelson }, true, Global.GENERIC_STANDARD);
 
       return result;
       
@@ -2205,7 +2444,7 @@ public class TezosGateway
                        + "{ \"prim\": \"SET_DELEGATE\" },"
                        + "{ \"prim\": \"CONS\" }]";
 
-      result = callContractEntryPoint(managerAddress, delegator, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys, "do", new String[] { michelson }, true );
+      result = callContractEntryPoint(managerAddress, delegator, BigDecimal.ZERO, roundedFee, gasLimit, storageLimit, encKeys, "do", new String[] { michelson }, true , Global.GENERIC_STANDARD);
       
       return result;
       

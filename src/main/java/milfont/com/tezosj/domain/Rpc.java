@@ -180,14 +180,14 @@ public class Rpc
 
    public JSONObject callContractEntryPoint(String from, String contract, BigDecimal amount, BigDecimal fee,
                                             String gasLimit, String storageLimit, EncKeys encKeys, String entrypoint,
-                                            String[] parameters, Boolean rawParameter)
+                                            String[] parameters, Boolean rawParameter, String smartContractType)
    {
       JSONObject result = new JSONObject();
 
       try
       {
          result = (JSONObject) tezosGateway.callContractEntryPoint(from, contract, amount, fee, gasLimit, storageLimit,
-               encKeys, entrypoint, parameters, rawParameter);
+               encKeys, entrypoint, parameters, rawParameter, smartContractType);
       } catch (Exception e)
       {
          e.printStackTrace();

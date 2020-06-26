@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.KeyStore.SecretKeyEntry;
 import java.util.ArrayList;
@@ -33,13 +34,15 @@ import static milfont.com.tezosj.helper.Constants.TZJ_KEY_ALIAS;
 import static milfont.com.tezosj.helper.Constants.UTEZ;
 import static milfont.com.tezosj.helper.Encoder.HEX;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
  * Created by Milfont on 21/07/2018.
  */
 
-public class TezosWallet implements FA12
+public class TezosWallet implements FA12_Interface
 {
 
    private String alias = "";
@@ -1367,7 +1370,7 @@ public class TezosWallet implements FA12
    // Returns to the user the operation results from Tezos node.
    public JSONObject callContractEntryPoint(String from, String contract, BigDecimal amount, BigDecimal fee,
                                             String gasLimit, String storageLimit, String entrypoint,
-                                            String[] parameters, Boolean rawParameter)
+                                            String[] parameters, Boolean rawParameter, String smartContractType)
          throws Exception
    {
       JSONObject result = new JSONObject();
@@ -1393,7 +1396,7 @@ public class TezosWallet implements FA12
                         encKeys.setEncP(this.encPass);
 
                         result = rpc.callContractEntryPoint(from, contract, amount, fee, gasLimit, storageLimit,
-                              encKeys, entrypoint, parameters, rawParameter);
+                              encKeys, entrypoint, parameters, rawParameter, smartContractType);
                      }
                      else
                      {
@@ -1718,24 +1721,6 @@ public class TezosWallet implements FA12
 
    }
 
-   @Override
-   public void approve(String contractAddress, String spender, Integer value) throws Exception
-   {
-     callContractEntryPoint(getPublicKeyHash(), contractAddress, new BigDecimal("0"),
-            new BigDecimal("0.1"), "", "", "approve", new String[]
-            { spender, String.valueOf(value) }, false);
-
-   }
-
-   @Override
-   public void transfer(String contractAddress, String from, String to, Integer value) throws Exception
-   {
-      JSONObject jsonObject = callContractEntryPoint(getPublicKeyHash(), contractAddress, new BigDecimal("0"),
-            new BigDecimal("0.1"), "", "", "transfer", new String[]
-            { from, to, String.valueOf(value)}, false);
-
-   }
-
    public ArrayList<Map> getContractStorage(String contractAddress) throws Exception
    {
       ArrayList<Map> items = new ArrayList<Map>();
@@ -1743,6 +1728,176 @@ public class TezosWallet implements FA12
       items = (ArrayList<Map>) rpc.getContractStorage(contractAddress);
 
       return items;
+   }
+
+   
+   // FA1.2
+   
+   @Override
+   public JSONObject FA12_transfer(String targetContract, String from, String to, BigInteger value) throws Exception
+   {
+      JSONObject result = null;
+      
+      JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+            targetContract,
+            new BigDecimal("0"),
+            new BigDecimal("0.1"),
+            "", "",
+            "transfer",
+            new String[]{ from, to, String.valueOf(value) },
+            false,
+            Global.FA12_STANDARD);
+      
+      return jsonObject;
+      
+   }
+
+   @Override
+   public JSONObject FA12_approve(String targetContract, String spender, BigInteger value) throws Exception
+   {
+      JSONObject result = null;
+      
+      JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+            targetContract,
+            new BigDecimal("0"),
+            new BigDecimal("0.1"),
+            "", "",
+            "approve",
+            new String[]{ spender, String.valueOf(value) },
+            false,
+            Global.FA12_STANDARD);
+      
+      return jsonObject;
+   }
+
+   @Override
+   public JSONObject FA12_getAllowance(String targetContract, String owner, String spender) throws Exception
+   {
+         JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+               targetContract,
+               new BigDecimal("0"),
+               new BigDecimal("0.1"),
+               "", "",
+               "getAllowance",
+               new String[]{ owner, spender, Global.NAT_STORAGE_ADDRESS },
+               false,
+               Global.FA12_STANDARD);
+   
+      JSONObject result = new JSONObject();
+      result.put("result", extractBacktrackedResult(jsonObject.getJSONObject("result")));
+   
+      return result;
+   }
+
+   @Override
+   public JSONObject FA12_getBalance(String targetContract, String owner) throws Exception
+   {
+
+      JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+                                                     targetContract,
+                                                     new BigDecimal("0"),
+                                                     new BigDecimal("0.1"),
+                                                     "", "",
+                                                     "getBalance",
+                                                     new String[]{ owner, Global.NAT_STORAGE_ADDRESS },
+                                                     false,
+                                                     Global.FA12_STANDARD);
+      
+      JSONObject result = new JSONObject();
+      result.put("result", extractBacktrackedResult(jsonObject.getJSONObject("result")));
+      
+      return result;
+   }
+   
+   @Override
+   public JSONObject FA12_getTotalSupply(String targetContract) throws Exception
+   {
+
+      JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+                                                     targetContract,
+                                                     new BigDecimal("0"),
+                                                     new BigDecimal("0.1"),
+                                                     "", "",
+                                                     "getTotalSupply",
+                                                     new String[]{ Global.NAT_STORAGE_ADDRESS },
+                                                     false,
+                                                     Global.FA12_STANDARD);
+      
+      JSONObject result = new JSONObject();
+      result.put("result", extractBacktrackedResult(jsonObject.getJSONObject("result")));
+      
+      return result;
+   }
+
+   private String extractBacktrackedResult(JSONObject jsonObject)
+   {
+      String result = "";
+      
+      if (jsonObject.has("contents"))
+      {
+         JSONArray contentsArray = ((JSONArray) jsonObject.get("contents"));
+   
+         for(int w=0;w<contentsArray.length();w++)
+         {
+            JSONObject opRes = (JSONObject)((JSONObject)contentsArray.get(w)).get("metadata"); 
+            
+            if(opRes.has("internal_operation_results"))
+            {
+               JSONObject backtrack = (JSONObject) ((JSONObject)((JSONObject)((JSONArray)opRes.get("internal_operation_results")).get(0)).get("parameters")).get("value");
+               
+               if (backtrack.has("int"))
+               {
+                  result = backtrack.getString("int");
+               }
+               
+               break;
+               
+            }
+   
+            if(opRes.has("operation_result"))
+            {
+               JSONObject opResult = (JSONObject)opRes.get("operation_result");
+               
+               if (opResult.has("errors"))
+               {
+                  JSONObject errors = new JSONObject();
+                  errors = (JSONObject) ((JSONArray) opResult.get("errors")).get(1);
+                  
+                  String kind = errors.getString("kind");
+                  String id = errors.getString("id");
+                  String description = "";
+                  
+                  if (errors.has("with"))
+                  {
+                     description = ((JSONObject)errors.get("with")).get("args").toString();
+                  }
+                  
+                  if (errors.has("wrongExpression"))
+                  {
+                     description = ((JSONObject)errors.get("wrongExpression")).toString();
+                  }
+                  
+                  result = "Error: " + kind + " " + id + " " + description;
+                  
+               }
+               
+               if (opResult.has("status"))
+               {
+                  result = result + " - Status : " + opResult.get("status").toString();
+               }
+               
+               break;
+               
+            }
+         }
+         
+      }
+      else if (jsonObject.has("result"))
+      {
+         result = jsonObject.get("result").toString();
+      }      
+      
+      return result;
    }
 
    

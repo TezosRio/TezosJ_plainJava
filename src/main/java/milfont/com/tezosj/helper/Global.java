@@ -23,7 +23,17 @@ public class Global
    public static String KT_TO_KT_GAS_LIMIT = "44725";
    public static String KT_TO_KT_STORAGE_LIMIT = "0";
    public static String KT_TO_KT_FEE = "0.005";
-
+   public static String NAT_STORAGE_ADDRESS = "KT1NhtHwHD5cqabfSdwg1Fowud5f175eShwx";
+   public static String FA12_STANDARD = "FA12";
+   public static String FA2_STANDARD = "F2";
+   public static String NYX_STANDARD = "NYX";
+   public static String GENERIC_STANDARD = "generic";
+   public static String FA12_TRANSFER = "transfer";
+   public static String FA12_APPROVE = "approve";
+   public static String FA12_GET_ALLOWANCE = "getAllowance";
+   public static String FA12_GET_BALANCE = "getBalance";
+   public static String FA12_GET_TOTAL_SUPPLY = "getTotalSupply";
+   public static String CONFIRM_WITH_LEDGER_MESSAGE = "Waiting for transaction confirmation on Ledger hardware device...";
    
 	public static void initKeyStore() throws KeyStoreException
 	{
