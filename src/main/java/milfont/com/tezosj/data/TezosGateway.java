@@ -442,6 +442,84 @@ public class TezosGateway
       return result;
    }
 
+   // Sends an activate operation to the Tezos node.
+   public JSONObject activate(String addressToActivate, String secret, EncKeys encKeys) throws Exception
+   {
+      // This method will activate a Tezos address. Either through the use of a given "secret"
+      // (like from a faucet or from the fundraiser), or (if an empty "secret" is provided) through 
+      // sending a tiny amount of tez to the destination address (addressToActivate).
+      
+      JSONObject result = new JSONObject();
+
+      if (secret.isEmpty() == false)
+      {
+      
+         JSONArray operations = new JSONArray();
+         JSONObject transaction = new JSONObject();
+         
+         transaction.put("kind", "activate_account");
+         transaction.put("pkh", addressToActivate);
+         transaction.put("secret", secret);
+         
+         operations.put(transaction);
+   
+         result = (JSONObject) sendOperation(operations, encKeys);
+      }
+      else
+      {
+         BigDecimal amount = new BigDecimal("0.002490");
+         BigDecimal fee = new BigDecimal("0.002490");
+     
+         // Get public key hash from encKeys.
+         byte[] bytePk = encKeys.getEncPublicKeyHash();
+         byte[] decPkBytes = decryptBytes(bytePk, TezosWallet.getEncryptionKey(encKeys));
+
+         StringBuilder builder2 = new StringBuilder();
+         for(byte decPkByte : decPkBytes)
+         {
+            builder2.append((char) (decPkByte));
+         }
+         String from = builder2.toString();
+         
+         result = (JSONObject) sendTransaction(from, addressToActivate, amount, fee, "", "", encKeys);         
+      }
+      
+      return result;
+   }
+
+   // Sends a reveal operation to the Tezos node.
+   public JSONObject reveal(String publicKeyHash, String publicKey, EncKeys encKeys) throws Exception
+   {
+      JSONObject result = new JSONObject(); 
+      JSONArray operations = new JSONArray();
+      JSONObject transaction = new JSONObject();
+      JSONObject head = new JSONObject();
+      JSONObject account = new JSONObject();
+      Integer counter = 0;
+
+      head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+      account = getAccountForBlock(head.get("hash").toString(), publicKeyHash);
+      counter = Integer.parseInt(account.get("counter").toString());
+      
+      BigDecimal fee = new BigDecimal("0.002490");
+      BigDecimal roundedFee = fee.setScale(6, BigDecimal.ROUND_HALF_UP);
+      
+      transaction.put("kind", "reveal");
+      transaction.put("source", publicKeyHash);
+      transaction.put("fee", (String.valueOf(roundedFee.multiply(BigDecimal.valueOf(UTEZ)).toBigInteger())));
+      transaction.put("counter", String.valueOf(counter + 1));
+      transaction.put("gas_limit", "15400");
+      transaction.put("storage_limit", "300");
+      transaction.put("public_key", publicKey);
+      
+      operations.put(transaction);
+
+      result = (JSONObject) sendOperation(operations, encKeys);
+
+      return result;
+   }
+
+   
    private SignedOperationGroup signOperationGroup(String forgedOperation, EncKeys encKeys) throws Exception
    {
       JSONObject signed =null;

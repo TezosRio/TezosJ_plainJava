@@ -24,6 +24,7 @@ public class Global
    public static String KT_TO_KT_STORAGE_LIMIT = "0";
    public static String KT_TO_KT_FEE = "0.005";
    public static String NAT_STORAGE_ADDRESS = "KT1NhtHwHD5cqabfSdwg1Fowud5f175eShwx";
+   public static String NAT_STORAGE_TESTNET_ADDRESS = "KT1KnuSv4cUq6gjRJaTpqXYoJskneKphrHNB";
    public static String FA12_STANDARD = "FA12";
    public static String FA2_STANDARD = "F2";
    public static String NYX_STANDARD = "NYX";

@@ -83,6 +83,44 @@ public class Rpc
 
    }
 
+   public JSONObject reveal(String publicKeyHash, String publicKey, EncKeys encKeys)
+   {
+      JSONObject result = new JSONObject();
+
+      try
+      {
+         result = (JSONObject) tezosGateway.reveal(publicKeyHash, publicKey, encKeys);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to perform a reveal operation. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+
+   public JSONObject activate(String addressToActivate, String secret, EncKeys encKeys)
+   {
+      JSONObject result = new JSONObject();
+
+      try
+      {
+         result = (JSONObject) tezosGateway.activate(addressToActivate, secret, encKeys);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         throw new java.lang.RuntimeException(
+               "An error occured while trying to perform an activate operation. See stacktrace for more info.");
+      }
+
+      return result;
+
+   }
+
    public JSONObject delegate(String delegateFrom, String delegateTo, BigDecimal fee, String gasLimit,
                               String storageLimit, EncKeys encKeys)
    {

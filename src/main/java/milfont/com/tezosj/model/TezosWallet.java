@@ -664,6 +664,55 @@ public class TezosWallet implements FA12_Interface
 
    }
 
+   // Activates the address in the Tezos blockchain using a secret.
+   public JSONObject activate(String addressToActivate, String secret) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      // Prepares keys.
+      EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+      encKeys.setEncIv(this.encIv);
+      encKeys.setEncP(this.encPass);
+
+      result = rpc.activate(addressToActivate, secret, encKeys);
+  
+      return result;
+
+   }
+
+   // Activates the address in the Tezos blockchain by sending funds to it.
+   public JSONObject activate(String addressToActivate) throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      // Prepares keys.
+      EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+      encKeys.setEncIv(this.encIv);
+      encKeys.setEncP(this.encPass);
+
+      result = rpc.activate(addressToActivate, "", encKeys);
+  
+      return result;
+
+   }
+
+   
+   // Reveals the address to the Tezos blockchain.
+   public JSONObject reveal() throws Exception
+   {
+      JSONObject result = new JSONObject();
+
+      // Prepares keys.
+      EncKeys encKeys = new EncKeys(this.publicKey, this.privateKey, this.publicKeyHash, this.myRandomID);
+      encKeys.setEncIv(this.encIv);
+      encKeys.setEncP(this.encPass);
+
+      result = rpc.reveal(getPublicKeyHash(), getPublicKey(), encKeys);
+  
+      return result;
+
+   }
+
    private void initStore(byte[] toHash)
    {
       try
@@ -896,6 +945,7 @@ public class TezosWallet implements FA12_Interface
 
                initStore(c);
                initDomainClasses();
+                 
             }
 
          } catch (IOException e)
@@ -1509,6 +1559,36 @@ public class TezosWallet implements FA12_Interface
 
    }
 
+   // Retrieves the Public Key upon user request.
+   public String getPublicKey()
+   {
+      if(this.publicKey != null)
+      {
+         if(this.publicKey.length > 0)
+         {
+
+            byte[] decrypted = decryptBytes(this.publicKey, getEncryptionKey());
+
+            StringBuilder builder = new StringBuilder();
+            for(byte aDecrypted : decrypted)
+            {
+               builder.append((char) (aDecrypted));
+            }
+            return builder.toString();
+         }
+         else
+         {
+            throw new java.lang.RuntimeException("Error getting public key.");
+         }
+      }
+      else
+      {
+         throw new java.lang.RuntimeException("Error getting public key.");
+      }
+
+   }
+
+   
    public Boolean hasPrivateKey()
    {
       return ( this.privateKey == null ? false : true);
@@ -1829,6 +1909,44 @@ public class TezosWallet implements FA12_Interface
       return result;
    }
 
+   public JSONObject FA12_getBalance_testnet(String targetContract, String owner) throws Exception
+   {
+
+      JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+                                                     targetContract,
+                                                     new BigDecimal("0"),
+                                                     new BigDecimal("0.1"),
+                                                     "", "",
+                                                     "getBalance",
+                                                     new String[]{ owner, Global.NAT_STORAGE_TESTNET_ADDRESS },
+                                                     false,
+                                                     Global.FA12_STANDARD);
+      
+      JSONObject result = new JSONObject();
+      result.put("result", extractBacktrackedResult(jsonObject.getJSONObject("result")));
+      
+      return result;
+   }
+   
+   public JSONObject FA12_getTotalSupply_testnet(String targetContract) throws Exception
+   {
+
+      JSONObject jsonObject = callContractEntryPoint(this.getPublicKeyHash(),
+                                                     targetContract,
+                                                     new BigDecimal("0"),
+                                                     new BigDecimal("0.1"),
+                                                     "", "",
+                                                     "getTotalSupply",
+                                                     new String[]{ Global.NAT_STORAGE_TESTNET_ADDRESS },
+                                                     false,
+                                                     Global.FA12_STANDARD);
+      
+      JSONObject result = new JSONObject();
+      result.put("result", extractBacktrackedResult(jsonObject.getJSONObject("result")));
+      
+      return result;
+   }
+
    private String extractBacktrackedResult(JSONObject jsonObject)
    {
       String result = "";
@@ -1869,7 +1987,7 @@ public class TezosWallet implements FA12_Interface
                   
                   if (errors.has("with"))
                   {
-                     description = ((JSONObject)errors.get("with")).get("args").toString();
+                     description = ((JSONObject)errors.get("with")).toString();
                   }
                   
                   if (errors.has("wrongExpression"))

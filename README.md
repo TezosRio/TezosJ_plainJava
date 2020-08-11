@@ -1,7 +1,7 @@
 # TezosJ_plainjava
 
 
-======== VERSION 1.3.8 ========
+======== VERSION 1.3.9 ========
 
 
 A Java SDK for Tezos node interactions with [Conseil](https://cryptonomic.github.io/Conseil/#/) support.
@@ -19,7 +19,7 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import as a Gradle Project into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.3.8.jar) and add to your project's classpath.
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.3.9.jar) and add to your project's classpath.
 
 
 ## Usage
