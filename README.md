@@ -1,7 +1,7 @@
 # TezosJ_plainjava
 
 
-======== VERSION 1.3.9 ========
+======== VERSION 1.4.0 ========
 
 
 A Java SDK for Tezos node interactions with [Conseil](https://cryptonomic.github.io/Conseil/#/) support.
@@ -19,7 +19,7 @@ The library is written in Java and is based on Gradle framework. This repository
 ## Getting started
 
 - Clone the repository, import as a Gradle Project into your Java IDE and run the Main class.
-- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.3.9.jar) and add to your project's classpath.
+- Or download the JAR (https://github.com/tezosRio/TezosJ_plainJava/blob/master/tezosj-sdk-plain-java-1.4.0.jar) and add to your project's classpath.
 
 
 ## Usage
@@ -235,7 +235,7 @@ This software is at Beta stage. It is currently experimental and still under dev
 - Builds entrypoint parameters messages on the fly.
 - Ledger Nano hardware wallet integration through Ledger Javascript library (not included).
 - FA1.2 smart contract entrypoint calls - getBalance, getAllowance, getTotalSupply, transfer and approve.
-
+- Improved mnemonic generation security.
 
 The main purpose of TezosJ SDK library is to foster development of applications in plain Java that interacts with Tezos ecosystem. This might open Tezos to a whole world of software producers, ready to collaborate with the platform. TezosJ is to play the role of a layer that will translate default Java method calls to Tezos network real operations (create_account, transfer_token, etc.)
 

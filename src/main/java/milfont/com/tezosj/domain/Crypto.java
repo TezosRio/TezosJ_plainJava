@@ -2,6 +2,7 @@ package milfont.com.tezosj.domain;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
 
@@ -43,7 +44,7 @@ public class Crypto
         int myRandomID;
 
     	// Creates a unique copy and initializes libsodium native library.
-    	Random rand = new Random();
+    	SecureRandom rand = new SecureRandom();
     	int  n = rand.nextInt(1000000) + 1;
     	myRandomID = n;
     	sodium = new MySodium(String.valueOf(n));

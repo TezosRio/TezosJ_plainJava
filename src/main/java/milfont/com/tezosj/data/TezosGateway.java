@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class TezosGateway
 
    public TezosGateway()
    {
-      Random rand = new Random();
+      SecureRandom rand = new SecureRandom();
       int n = rand.nextInt(1000000) + 1;
       TezosGateway.sodium = new MySodium(String.valueOf(n));
    }

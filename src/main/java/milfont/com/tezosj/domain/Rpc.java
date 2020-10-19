@@ -32,7 +32,7 @@ public class Rpc
 
       try
       {
-         response = (String) tezosGateway.getHead().get("result");
+         response = tezosGateway.getHead().toString();
       } catch (Exception e)
       {
          e.printStackTrace();

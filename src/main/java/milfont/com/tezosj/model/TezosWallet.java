@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.KeyStore.SecretKeyEntry;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -72,7 +73,7 @@ public class TezosWallet implements FA12_Interface
          {
 
             // Creates a unique copy and initializes libsodium native library.
-            Random rand = new Random();
+            SecureRandom rand = new SecureRandom();
             int n = rand.nextInt(1000000) + 1;
             this.myRandomID = n;
             this.sodium = new MySodium(String.valueOf(n));
@@ -117,7 +118,7 @@ public class TezosWallet implements FA12_Interface
                {
 
                   // Creates a unique copy and initializes libsodium native library.
-                  Random rand = new Random();
+                  SecureRandom rand = new SecureRandom();
                   int n = rand.nextInt(1000000) + 1;
                   this.myRandomID = n;
                   this.sodium = new MySodium(String.valueOf(n));
@@ -178,7 +179,7 @@ public class TezosWallet implements FA12_Interface
    public TezosWallet(Boolean loadFromFile, String pathToFile, String p)
    {
       // Creates a unique copy and initializes libsodium native library.
-      Random rand = new Random();
+      SecureRandom rand = new SecureRandom();
       int n = rand.nextInt(1000000) + 1;
       this.myRandomID = n;
       this.sodium = new MySodium(String.valueOf(n));
@@ -192,7 +193,7 @@ public class TezosWallet implements FA12_Interface
    public TezosWallet(byte[] encData, byte[] p)
    {
       // Creates a unique copy and initializes libsodium native library.
-      Random rand = new Random();
+      SecureRandom rand = new SecureRandom();
       int n = rand.nextInt(1000000) + 1;
       this.myRandomID = n;
       this.sodium = new MySodium(String.valueOf(n));
@@ -212,7 +213,7 @@ public class TezosWallet implements FA12_Interface
       this.mnemonicWords = null;
 
       // Creates a unique copy and initializes libsodium native library.
-      Random rand = new Random();
+      SecureRandom rand = new SecureRandom();
       int n = rand.nextInt(1000000) + 1;
       this.myRandomID = n;
       this.sodium = new MySodium(String.valueOf(n));
@@ -261,7 +262,7 @@ public class TezosWallet implements FA12_Interface
       this.mnemonicWords = null;
 
       // Creates a unique copy and initializes libsodium native library.
-      Random rand = new Random();
+      SecureRandom rand = new SecureRandom();
       int n = rand.nextInt(1000000) + 1;
       this.myRandomID = n;
       this.sodium = new MySodium(String.valueOf(n));
