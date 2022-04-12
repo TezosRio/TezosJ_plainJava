@@ -181,7 +181,7 @@ public class TezosGateway
 
    public JSONObject getHead() throws Exception
    {
-      return (JSONObject) query("/chains/main/blocks/head", null);
+      return (JSONObject) query("/chains/main/blocks/head~2", null);
    }
 
    public JSONObject getAccountManagerForBlock(String blockHash, String accountID) throws Exception
@@ -195,7 +195,7 @@ public class TezosGateway
    // Gets the balance for a given address.
    public JSONObject getBalance(String address) throws Exception
    {
-      return (JSONObject) query("/chains/main/blocks/head/context/contracts/" + address + "/balance", null);
+      return (JSONObject) query("/chains/main/blocks/head~2/context/contracts/" + address + "/balance", null);
    }
 
    // Prepares and sends an operation to the Tezos node.
@@ -205,7 +205,7 @@ public class TezosGateway
       JSONObject head = new JSONObject();
       String forgedOperationGroup = "";
 
-      head = (JSONObject) query("/chains/main/blocks/head/header", null);
+      head = (JSONObject) query("/chains/main/blocks/head~2/header", null);
       forgedOperationGroup = forgeOperations(head, operations);
 
       // Check for errors.
@@ -321,7 +321,7 @@ public class TezosGateway
       JSONObject head = new JSONObject();
       String forgedOperationGroup = "";
 
-      head = (JSONObject) query("/chains/main/blocks/head/header", null);
+      head = (JSONObject) query("/chains/main/blocks/head~2/header", null);
       forgedOperationGroup = forgeOperations(head, operations);
 
       // Check for errors.
@@ -414,7 +414,7 @@ public class TezosGateway
          }
       }
 
-      head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+      head = new JSONObject(query("/chains/main/blocks/head~2/header", null).toString());
       account = getAccountForBlock(head.get("hash").toString(), from);
       counter = Integer.parseInt(account.get("counter").toString());
 
@@ -498,7 +498,7 @@ public class TezosGateway
       JSONObject account = new JSONObject();
       Integer counter = 0;
 
-      head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+      head = new JSONObject(query("/chains/main/blocks/head~2/header", null).toString());
       account = getAccountForBlock(head.get("hash").toString(), publicKeyHash);
       counter = Integer.parseInt(account.get("counter").toString());
       
@@ -583,7 +583,7 @@ public class TezosGateway
 
    private String nodeForgeOperations(String opGroup) throws Exception
    {
-      JSONObject response = (JSONObject) query("/chains/main/blocks/head/helpers/forge/operations", opGroup);
+      JSONObject response = (JSONObject) query("/chains/main/blocks/head~2/helpers/forge/operations", opGroup);
       String forgedOperation = (String) response.get("result");
 
       return ((forgedOperation.replaceAll("\\n", "")).replaceAll("\"", "").replaceAll("'", ""));
@@ -610,7 +610,7 @@ public class TezosGateway
 
    private JSONObject nodeApplyOperation(JSONArray payload) throws Exception
    {
-      return (JSONObject) query("/chains/main/blocks/head/helpers/preapply/operations", payload.toString());
+      return (JSONObject) query("/chains/main/blocks/head~2/helpers/preapply/operations", payload.toString());
    }
 
    private JSONObject nodeRunOperation(JSONArray payload, String chainId) throws Exception
@@ -619,7 +619,7 @@ public class TezosGateway
       operation.put("operation", payload.get(0));
       operation.put("chain_id", chainId);
       
-      return (JSONObject) query("/chains/main/blocks/head/helpers/scripts/run_operation", operation.toString());
+      return (JSONObject) query("/chains/main/blocks/head~2/helpers/scripts/run_operation", operation.toString());
    }
    
    private JSONObject applyOperation(JSONObject head, JSONArray operations, String operationGroupHash,
@@ -998,7 +998,7 @@ public class TezosGateway
          }
       }
 
-      head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+      head = new JSONObject(query("/chains/main/blocks/head~2/header", null).toString());
       account = getAccountForBlock(head.get("hash").toString(), delegator);
       counter = Integer.parseInt(account.get("counter").toString());
 
@@ -1071,7 +1071,7 @@ public class TezosGateway
          }
       }
 
-      head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+      head = new JSONObject(query("/chains/main/blocks/head~2/header", null).toString());
       account = getAccountForBlock(head.get("hash").toString(), from);
       counter = Integer.parseInt(account.get("counter").toString());
 
@@ -1194,7 +1194,7 @@ public class TezosGateway
          roundedFee = item.getFee().setScale(6, BigDecimal.ROUND_HALF_UP);
 
          // Get address counter.
-         head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+         head = new JSONObject(query("/chains/main/blocks/head~2/header", null).toString());
          account = getAccountForBlock(head.get("hash").toString(), item.getFrom());
          counter = Integer.parseInt(account.get("counter").toString());
 
@@ -1266,7 +1266,7 @@ public class TezosGateway
          {
 
             // Get blockchain header.
-            response = (JSONObject) query("/chains/main/blocks/head/header", null);
+            response = (JSONObject) query("/chains/main/blocks/head~2/header", null);
 
             // Acquaire current blockchain block (level) if it is zero yet.
             if(currentBlockNumber == 0)
@@ -1444,7 +1444,7 @@ public class TezosGateway
          }
       }
 
-      head = new JSONObject(query("/chains/main/blocks/head/header", null).toString());
+      head = new JSONObject(query("/chains/main/blocks/head~2/header", null).toString());
       account = getAccountForBlock(head.get("hash").toString(), from);
       counter = Integer.parseInt(account.get("counter").toString());
 
@@ -1917,7 +1917,7 @@ public class TezosGateway
    private String[] getContractEntryPoints(String contractAddress) throws Exception
    {
       JSONObject response = (JSONObject) query(
-            "/chains/main/blocks/head/context/contracts/" + contractAddress + "/entrypoints", null);
+            "/chains/main/blocks/head~2/context/contracts/" + contractAddress + "/entrypoints", null);
 
       JSONObject entryPointsJson = (JSONObject) response.get("entrypoints");
 
@@ -1956,7 +1956,7 @@ public class TezosGateway
       }
 
       JSONObject response = (JSONObject) query(
-            "/chains/main/blocks/head/context/contracts/" + contractAddress + "/entrypoints/" + entrypoint, null);
+            "/chains/main/blocks/head~2/context/contracts/" + contractAddress + "/entrypoints/" + entrypoint, null);
 
       JSONArray paramArray = decodeParameters(response, null);
 
@@ -2041,7 +2041,7 @@ public class TezosGateway
 
       ArrayList<Map> items = new ArrayList<Map>();
       
-       JSONObject response = (JSONObject) query("/chains/main/blocks/head/context/contracts/" + contractAddress + "/storage/", null);
+       JSONObject response = (JSONObject) query("/chains/main/blocks/head~2/context/contracts/" + contractAddress + "/storage/", null);
         
        JSONArray storageArray = decodeParameters(response, null);
         
@@ -2116,7 +2116,7 @@ public class TezosGateway
          {
 
             // Get blockchain header.
-            response = (JSONObject) query("/chains/main/blocks/head/header", null);
+            response = (JSONObject) query("/chains/main/blocks/head~2/header", null);
 
             // Acquaire current blockchain block (level) if it is zero yet.
             if(currentBlockNumber == 0)
@@ -2281,7 +2281,7 @@ public class TezosGateway
          {
 
             // Get blockchain header.
-            response = (JSONObject) query("/chains/main/blocks/head/header", null);
+            response = (JSONObject) query("/chains/main/blocks/head~2/header", null);
 
             // Acquaire current blockchain block (level) if it is zero yet.
             if(currentBlockNumber == 0)
