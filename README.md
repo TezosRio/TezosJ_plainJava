@@ -1,7 +1,7 @@
 # TezosJ_plainjava
 
 
-======== VERSION 1.4.1 ========
+======== VERSION 1.4.1 ===========
 
 
 A Java SDK for Tezos node interactions with [Conseil](https://cryptonomic.github.io/Conseil/#/) support.
